@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "scs",
+  "version": "${version}",
+  "name": "Scs 1.21.1 Fabric",
+  "description": "Мод для проверок на SkyBars, для проверяющих 1.20.2 Fabric",
+  "authors": [],
+  "contact": {},
+  "license": "All-Rights-Reserved",
+  "icon": "assets/scs/icon.png",
+  "environment": "server",
+  "entrypoints": {
+    "fabric-datagen": [
+      "com.scs.client.ScsDataGenerator"
+    ],
+    "main": [
+      "com.scs.Scs"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-language-kotlin": ">=${kotlin_loader_version}",
+    "minecraft": "${minecraft_version}"
+  }
+}
