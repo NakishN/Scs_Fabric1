@@ -42,6 +42,7 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
             .checked(ScsConfig.showMainPanel)
             .callback { _, checked ->
                 ScsConfig.showMainPanel = checked
+                ScsConfig.save()
             }
             .build()
         addDrawableChild(showMainPanelCheckbox)
@@ -53,6 +54,7 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
             .checked(ScsConfig.showDupeIPPanel)
             .callback { _, checked ->
                 ScsConfig.showDupeIPPanel = checked
+                ScsConfig.save()
             }
             .build()
         addDrawableChild(showDupeIPPanelCheckbox)
@@ -326,6 +328,9 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
         // Сохраняем независимые координаты DupeIP панели
         ScsConfig.dupeIPPanelX = tempDupeIPPanelX
         ScsConfig.dupeIPPanelY = tempDupeIPPanelY
+        
+        // Сохраняем конфигурацию в файл
+        ScsConfig.save()
         
         val client = net.minecraft.client.MinecraftClient.getInstance()
         client.player?.sendMessage(

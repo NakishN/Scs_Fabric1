@@ -13,13 +13,13 @@ object KeyInputHandler {
     private var prevShaurmaTap = false
     private var prevShaurmaMenu = false
     private var prevHudConfig = false
-    private var prevHudEdit = false
 
     fun onEndTick(client: MinecraftClient) {
         // Toggle HUD
         val currToggleHud = KeyBindings.toggleHudKey.isPressed
         if (currToggleHud && !prevToggleHud) {
             ScsConfig.enableHud = !ScsConfig.enableHud
+            ScsConfig.save() // Сохраняем изменение в конфиг
             client.player?.sendMessage(
                 net.minecraft.text.Text.literal(
                     if (ScsConfig.enableHud) "§a[HUD] Включен" else "§c[HUD] Выключен"
@@ -78,30 +78,5 @@ object KeyInputHandler {
             client.setScreen(com.scs.client.gui.HudConfigScreen(client.currentScreen))
         }
         prevHudConfig = currHudConfig
-
-        // HUD Edit Mode (переключение режима редактирования)
-        val currHudEdit = KeyBindings.hudEditKey.isPressed
-        if (currHudEdit && !prevHudEdit) {
-            ScsConfig.hudEditMode = !ScsConfig.hudEditMode
-            // При включении режима редактирования сразу разблокируем курсор
-            if (ScsConfig.hudEditMode && client.currentScreen == null) {
-                try {
-                    val mouse = client.mouse
-                    if (mouse != null && mouse.isCursorLocked) {
-                        mouse.unlockCursor()
-                    }
-                } catch (e: Exception) {
-                    // Игнорируем ошибки
-                }
-            }
-            client.player?.sendMessage(
-                net.minecraft.text.Text.literal(
-                    if (ScsConfig.hudEditMode) "§a[HUD] Режим редактирования включен - перетаскивайте панели ЛКМ" 
-                    else "§c[HUD] Режим редактирования выключен"
-                ),
-                false
-            )
-        }
-        prevHudEdit = currHudEdit
     }
 }

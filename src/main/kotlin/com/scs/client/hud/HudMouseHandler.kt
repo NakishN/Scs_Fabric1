@@ -14,6 +14,7 @@ object HudMouseHandler {
     private var panelStartX = 0
     private var panelStartY = 0
     private var wasMousePressed = false
+    private var lastSaveTime = 0L
     
     /**
      * Обновляет обработку мыши каждый тик (безопасный способ)
@@ -149,6 +150,12 @@ object HudMouseHandler {
                 
                 ScsConfig.hudX = newX.coerceIn(-screenWidth + 200, screenWidth - 200)
                 ScsConfig.hudY = newY.coerceIn(-screenHeight + 100, screenHeight - 100)
+                
+                // Сохраняем конфигурацию при перетаскивании (с задержкой, чтобы не спамить)
+                if (System.currentTimeMillis() - lastSaveTime > 500) {
+                    ScsConfig.save()
+                    lastSaveTime = System.currentTimeMillis()
+                }
             }
             "dupeip" -> {
                 var newX = panelStartX + deltaX.toInt()
@@ -163,6 +170,12 @@ object HudMouseHandler {
                 
                 ScsConfig.dupeIPPanelX = newX.coerceIn(-screenWidth + 250, screenWidth - 250)
                 ScsConfig.dupeIPPanelY = newY.coerceIn(-screenHeight + 50, screenHeight - 50)
+                
+                // Сохраняем конфигурацию при перетаскивании (с задержкой, чтобы не спамить)
+                if (System.currentTimeMillis() - lastSaveTime > 500) {
+                    ScsConfig.save()
+                    lastSaveTime = System.currentTimeMillis()
+                }
             }
         }
         

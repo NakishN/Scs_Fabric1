@@ -22,15 +22,19 @@ object CommandHandler {
             } else {
                 // Перехватываем команды /history для обработки очереди DupeIP
                 if (command.startsWith("/history ") && DupeIPQueueManager.hasQueue()) {
-                    // Команда выполнится на сервере, после выполнения добавим следующего в очередь
-                    // Запускаем обработку очереди с задержкой после выполнения команды
-                    val delay = CommandScheduler.commandDelay
+                    // Команда отправится на сервер, затем через 1 секунду обработаем следующего игрока из очереди
+                    val delayMs = 1000L // 1 секунда задержка между проверками
+                    
+                    // Запускаем обработку следующего игрока из очереди через 1 секунду после отправки команды
                     Thread {
-                        Thread.sleep(delay + 500) // Даем время на выполнение команды на сервере
-                        // Обрабатываем всех оставшихся игроков из очереди
-                        while (DupeIPQueueManager.hasQueue()) {
-                            DupeIPQueueManager.processNextFromQueue()
-                            Thread.sleep(delay) // Задержка между командами
+                        try {
+                            Thread.sleep(delayMs) // Ждем 1 секунду
+                            // После задержки обрабатываем следующего игрока из очереди
+                            if (DupeIPQueueManager.hasQueue()) {
+                                DupeIPQueueManager.processNextFromQueue()
+                            }
+                        } catch (e: Exception) {
+                            Scs.LOGGER.error("[ScS] Error processing DupeIP queue", e)
                         }
                     }.start()
                 }

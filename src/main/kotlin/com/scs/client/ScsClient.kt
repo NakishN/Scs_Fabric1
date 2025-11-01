@@ -25,23 +25,27 @@ open class ScsClient : ClientModInitializer {
             registerKeybindings()
             Scs.LOGGER.info("✓ Keybindings registered")
 
-            // 2. Загружаем данные шаурмы
+            // 2. Загружаем конфигурацию
+            ScsConfig.load()
+            Scs.LOGGER.info("✓ Config loaded")
+            
+            // 3. Загружаем данные шаурмы
             ShaurmaSystem.load()
             Scs.LOGGER.info("✓ Shaurma system loaded")
 
-            // 3. Регистрируем обработчики событий
+            // 4. Регистрируем обработчики событий
             registerEventHandlers()
             Scs.LOGGER.info("✓ Event handlers registered")
             
-            // 4. Регистрируем обработчик команд
+            // 5. Регистрируем обработчик команд
             CommandHandler.register()
             Scs.LOGGER.info("✓ Command handler registered")
             
-            // 5. Регистрируем обработчик чата
+            // 6. Регистрируем обработчик чата
             ChatEventHandler.register()
             Scs.LOGGER.info("✓ Chat event handler registered")
             
-            // 4. Регистрируем HUD рендерер
+            // 7. Регистрируем HUD рендерер
             HudRenderCallback.EVENT.register { drawContext, _ ->
                 HudRenderer.render(drawContext, 0.0f)
             }
@@ -74,7 +78,6 @@ open class ScsClient : ClientModInitializer {
         KeyBindingHelper.registerKeyBinding(KeyBindings.shaurmaTapKey)
         KeyBindingHelper.registerKeyBinding(KeyBindings.shaurmaMenuKey)
         KeyBindingHelper.registerKeyBinding(KeyBindings.hudConfigKey)
-        KeyBindingHelper.registerKeyBinding(KeyBindings.hudEditKey)
     }
 
     private fun registerEventHandlers() {

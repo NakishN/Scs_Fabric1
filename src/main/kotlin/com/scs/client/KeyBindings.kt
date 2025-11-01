@@ -11,7 +11,6 @@ object KeyBindings {
     lateinit var shaurmaTapKey: KeyBinding
     lateinit var shaurmaMenuKey: KeyBinding
     lateinit var hudConfigKey: KeyBinding
-    lateinit var hudEditKey: KeyBinding
     
     fun initialize() {
         toggleHudKey = KeyBinding(
@@ -48,12 +47,6 @@ object KeyBindings {
             "key.scs.hud_config",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_H,
-            "category.scs"
-        )
-        hudEditKey = KeyBinding(
-            "key.scs.hud_edit",
-            InputUtil.Type.KEYSYM,
-            GLFW.GLFW_KEY_J,
             "category.scs"
         )
     }

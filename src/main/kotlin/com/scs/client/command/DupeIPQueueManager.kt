@@ -20,6 +20,7 @@ object DupeIPQueueManager {
     
     /**
      * Обрабатывает следующего игрока из очереди
+     * Отправляет команду напрямую с задержкой 1 секунда
      */
     fun processNextFromQueue() {
         if (queuedPlayers.isEmpty()) {
@@ -36,8 +37,28 @@ object DupeIPQueueManager {
         
         Scs.LOGGER.info("[ScS] Processing next: $command (${queuedPlayers.size} remaining)")
         
-        // Добавляем команду в очередь CommandScheduler для выполнения с задержкой
-        CommandScheduler.scheduleCommand(command)
+        // Отправляем команду напрямую через сеть (без использования CommandScheduler для точной задержки)
+        val client = net.minecraft.client.MinecraftClient.getInstance()
+        val networkHandler = client.networkHandler
+        
+        if (networkHandler != null) {
+            val fullCommand = if (command.startsWith("/")) command else "/$command"
+            networkHandler.sendChatCommand(fullCommand)
+        }
+    }
+    
+    /**
+     * Просматривает следующего игрока без удаления из очереди
+     */
+    fun peekNextPlayer(): String? {
+        return queuedPlayers.firstOrNull()
+    }
+    
+    /**
+     * Удаляет следующего игрока из очереди
+     */
+    fun removeNextPlayer(): String? {
+        return if (queuedPlayers.isNotEmpty()) queuedPlayers.removeAt(0) else null
     }
     
     fun getQueueSize(): Int = queuedPlayers.size
