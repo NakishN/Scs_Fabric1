@@ -1,0 +1,140 @@
+package com.scs.client.command
+
+import com.scs.Scs
+import com.scs.client.config.ScsConfig
+import net.minecraft.client.MinecraftClient
+import java.util.concurrent.ConcurrentLinkedQueue
+
+/**
+ * Система антиспама команд для массовых операций DupeIP
+ * Выполняет команды с настраиваемой задержкой для защиты от спама
+ */
+object CommandScheduler {
+    private val commandQueue = ConcurrentLinkedQueue<ScheduledCommand>()
+    private var lastCommandTime = 0L
+    var commandDelay = 1200L // 1.2 секунды по умолчанию
+        private set
+    
+    private var isProcessing = false
+    
+    data class ScheduledCommand(
+        val command: String,
+        val timestamp: Long = System.currentTimeMillis()
+    )
+    
+    /**
+     * Добавляет команду в очередь
+     */
+    fun scheduleCommand(command: String) {
+        if (command.isBlank()) return
+        
+        // Убираем слэш в начале если есть
+        val cleanCommand = command.removePrefix("/")
+        
+        commandQueue.offer(ScheduledCommand(cleanCommand))
+        Scs.LOGGER.debug("[ScS] Command scheduled: $cleanCommand (queue size: ${commandQueue.size})")
+    }
+    
+    /**
+     * Добавляет несколько команд в очередь
+     */
+    fun scheduleCommands(commands: List<String>) {
+        commands.forEach { scheduleCommand(it) }
+        Scs.LOGGER.info("[ScS] Scheduled ${commands.size} commands (total queue: ${commandQueue.size})")
+    }
+    
+    /**
+     * Обработка очереди команд (вызывается каждый тик)
+     */
+    fun processQueue(client: MinecraftClient) {
+        if (commandQueue.isEmpty() || isProcessing) return
+        
+        val currentTime = System.currentTimeMillis()
+        val timeSinceLastCommand = currentTime - lastCommandTime
+        
+        if (timeSinceLastCommand >= commandDelay) {
+            val nextCommand = commandQueue.poll()
+            if (nextCommand != null) {
+                isProcessing = true
+                executeCommand(client, nextCommand.command)
+                lastCommandTime = currentTime
+                isProcessing = false
+            }
+        }
+    }
+    
+    /**
+     * Выполняет команду через сеть
+     */
+    private fun executeCommand(client: MinecraftClient, command: String) {
+        try {
+            val player = client.player
+            val networkHandler = client.networkHandler
+            
+            if (player == null || networkHandler == null) {
+                Scs.LOGGER.warn("[ScS] Cannot execute command: player or network handler is null")
+                return
+            }
+            
+            val fullCommand = if (command.startsWith("/")) command else "/$command"
+            Scs.LOGGER.info("[ScS] Executing command: $fullCommand")
+            
+            // В Fabric используем sendChatCommand для отправки команды
+            networkHandler.sendChatCommand(fullCommand)
+            
+            // Отправляем уведомление в чат
+            if (ScsConfig.enableChatButtons) {
+                player.sendMessage(
+                    net.minecraft.text.Text.literal("§7[ScS] §fКоманда: §e$fullCommand").apply {
+                        style = style.withItalic(true)
+                    },
+                    false
+                )
+            }
+        } catch (e: Exception) {
+            Scs.LOGGER.error("[ScS] Failed to execute command: /$command", e)
+        }
+    }
+    
+    /**
+     * Устанавливает задержку между командами (в миллисекундах)
+     */
+    fun setDelay(delayMs: Long) {
+        if (delayMs < 100) {
+            Scs.LOGGER.warn("[ScS] Delay too small ($delayMs ms), setting to 100ms minimum")
+            commandDelay = 100L
+        } else if (delayMs > 10000) {
+            Scs.LOGGER.warn("[ScS] Delay too large ($delayMs ms), setting to 10000ms maximum")
+            commandDelay = 10000L
+        } else {
+            commandDelay = delayMs
+        }
+        Scs.LOGGER.info("[ScS] Command delay set to ${commandDelay}ms")
+    }
+    
+    /**
+     * Очищает очередь команд
+     */
+    fun clearQueue() {
+        val size = commandQueue.size
+        commandQueue.clear()
+        lastCommandTime = 0L
+        Scs.LOGGER.info("[ScS] Command queue cleared ($size commands removed)")
+    }
+    
+    /**
+     * Получает текущий размер очереди
+     */
+    fun getQueueSize(): Int = commandQueue.size
+    
+    /**
+     * Проверяет, пуста ли очередь
+     */
+    fun isQueueEmpty(): Boolean = commandQueue.isEmpty()
+    
+    /**
+     * Получает все команды в очереди (для отображения)
+     */
+    fun getQueueSnapshot(): List<String> = commandQueue.map { it.command }
+}
+

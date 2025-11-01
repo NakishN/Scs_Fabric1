@@ -1,25 +1,27 @@
 {
   "schemaVersion": 1,
   "id": "scs",
-  "version": "${version}",
-  "name": "Scs 1.21.1 Fabric",
-  "description": "Мод для проверок на SkyBars, для проверяющих 1.20.2 Fabric",
-  "authors": [],
+  "version": "2.0.0",
+  "name": "ScS Enhanced",
+  "description": "Advanced Anti-Cheat Monitor + Shaurma Clicker + DupeIP Integration",
+  "authors": ["nakish_"],
   "contact": {},
-  "license": "All-Rights-Reserved",
-  "icon": "assets/scs/icon.png",
-  "environment": "server",
+  "license": "All Rights Reserved",
+  "environment": "client",
   "entrypoints": {
-    "fabric-datagen": [
-      "com.scs.client.ScsDataGenerator"
-    ],
-    "main": [
-      "com.scs.Scs"
+    "client": [
+      "com.scs.Scs",
+      "com.scs.client.ScsClient"
     ]
   },
+  "mixins": [
+    "scs.mixins.json"
+  ],
   "depends": {
-    "fabricloader": ">=${loader_version}",
-    "fabric-language-kotlin": ">=${kotlin_loader_version}",
-    "minecraft": "${minecraft_version}"
+    "fabricloader": ">=0.15.11",
+    "fabric-api": "*",
+    "fabric-language-kotlin": ">=1.11.0",
+    "minecraft": "~1.21.1",
+    "java": ">=21"
   }
 }

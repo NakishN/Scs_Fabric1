@@ -1,0 +1,47 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.14.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+
+> Configure project :
+Fabric Loom: 1.12.5
+Project directory 'C:\Users\albir\OneDrive\Desktop\Scs_Fabric' is located in OneDrive. This is known to cause issues and slower performance. Consider moving the project to a different location.
+Previous process has disowned the lock due to abrupt termination.
+Found existing cache lock file (ACQUIRED_PREVIOUS_OWNER_DISOWNED), rebuilding loom cache. This may have been caused by a failed or canceled build.
+./gradlew : 
+C:\Users\albir\AppData\Local\Temp\ps-script-dc082a20-768f-45d2-ae3b-0a33683925ba.ps1:83 знак:1
++ ./gradlew compileKotlin --no-daemon 2>&1 | Out-File -FilePath build_e ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+A problem occurred configuring root project 'Scs_Fabric'.
+> Could not resolve all files for configuration ':modImplementation'.
+   > Could not find net.fabricmc.fabric-api:fabric-api:0.109.2+1.21.1.
+     Searched in the following locations:
+       - file:/C:/Users/albir/OneDrive/Desktop/Scs_Fabric/.gradle/loom-cache/remapped_mods/net/fabricmc/fabric-api/fabr
+ic-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21.1.pom
+       - file:/C:/Users/albir/.gradle/caches/fabric-loom/minecraftMaven/net/fabricmc/fabric-api/fabric-api/0.109.2+1.21
+.1/fabric-api-0.109.2+1.21.1.pom
+       - file:/C:/Users/albir/OneDrive/Desktop/Scs_Fabric/.gradle/loom-cache/minecraftMaven/net/fabricmc/fabric-api/fab
+ric-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21.1.pom
+       - https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21.1.pom
+       - https://libraries.minecraft.net/net/fabricmc/fabric-api/fabric-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21.1.po
+m
+       - https://libraries.minecraft.net/net/fabricmc/fabric-api/fabric-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21.1.ja
+r
+       - https://repo.maven.apache.org/maven2/net/fabricmc/fabric-api/fabric-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21
+.1.jar
+       - https://repo.maven.apache.org/maven2/net/fabricmc/fabric-api/fabric-api/0.109.2+1.21.1/fabric-api-0.109.2+1.21
+.1.pom
+     Required by:
+         root project :
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 12s

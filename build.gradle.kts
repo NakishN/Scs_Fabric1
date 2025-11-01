@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     kotlin("jvm") version "2.2.21"
-    id("fabric-loom") version "1.12-SNAPSHOT"
+    id("fabric-loom") version "1.10-SNAPSHOT"
     id("maven-publish")
 }
 
@@ -24,29 +24,23 @@ java {
 }
 
 loom {
-    splitEnvironmentSourceSets()
+    // Removed splitEnvironmentSourceSets() since this is a client-only mod
+    // Client code can stay in main source set
 
     mods {
         register("scs") {
             sourceSet("main")
-            sourceSet("client")
         }
     }
 }
 
-fabricApi {
-    configureDataGeneration {
-        client = true
-    }
-}
+// Fabric API configuration removed - using individual modules instead
 
 repositories {
-    // Add repositories to retrieve artifacts from in here.
-    // You should only use this when depending on other mods because
-    // Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html
-    // for more information about repositories.
+    maven("https://maven.fabricmc.net/")
+    mavenCentral()
 }
+
 
 dependencies {
     // To change the versions see the gradle.properties file
@@ -54,6 +48,9 @@ dependencies {
     mappings("net.fabricmc:yarn:${project.property("yarn_mappings")}:v2")
     modImplementation("net.fabricmc:fabric-loader:${project.property("loader_version")}")
     modImplementation("net.fabricmc:fabric-language-kotlin:${project.property("kotlin_loader_version")}")
+    
+    // Fabric API - using correct group ID
+    modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_api_version")}")
 
 }
 

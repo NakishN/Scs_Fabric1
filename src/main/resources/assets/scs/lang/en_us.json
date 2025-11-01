@@ -1,0 +1,53 @@
+{
+  "key.scs.toggle_hud": "Toggle HUD",
+  "key.scs.show_history": "Show History",
+  "key.scs.clear_entries": "Clear Entries",
+  "key.scs.shaurma_tap": "Shaurma Tap",
+  "key.scs.shaurma_menu": "Shaurma Menu",
+  "key.scs.hud_config": "HUD Settings",
+  "key.scs.hud_edit": "HUD Edit Mode",
+  "category.scs": "ScS Enhanced",
+  
+  "scs.hud.toggle.on": "HUD enabled",
+  "scs.hud.toggle.off": "HUD disabled",
+  "scs.history.total": "Total entries: %d",
+  "scs.entries.cleared": "All entries cleared",
+  "scs.command.queue_cleared": "Command queue cleared",
+  "scs.command.delay_set": "Delay set to: %dms",
+  
+  "scs.shaurma.tap.message": "Delicious shaurma!",
+  "scs.shaurma.bonus.double": "DOUBLE SHAURMA!",
+  "scs.shaurma.bonus.triple": "TRIPLE SHAURMA!",
+  "scs.shaurma.bonus.mega": "MEGA SHAURMA!",
+  "scs.shaurma.bonus.legendary": "LEGENDARY SHAURMA!",
+  "scs.shaurma.reward": "+%d shaurma! Total: %d",
+  "scs.shaurma.stats.title": "=== SHAURMA STATISTICS ===",
+  "scs.shaurma.stats.total": "Total shaurma: %d",
+  "scs.shaurma.stats.taps": "Total taps: %d",
+  "scs.shaurma.stats.average": "Average: %.2f",
+  
+  "scs.achievement.unlocked": "ACHIEVEMENT UNLOCKED!",
+  "scs.achievement.first_tap": "First Tap",
+  "scs.achievement.hundred_taps": "Century",
+  "scs.achievement.thousand_taps": "Thousand",
+  "scs.achievement.hundred_shaurma": "Collector",
+  "scs.achievement.thousand_shaurma": "Millionaire",
+  "scs.achievement.ten_thousand_shaurma": "Oligarch",
+  
+  "scs.button.check": "[Check]",
+  "scs.button.spectate": "[Spectate]",
+  "scs.button.activity": "[Activity]",
+  "scs.button.history": "[History]",
+  "scs.button.copy_all": "[Copy All]",
+  "scs.button.history_all": "[History All]",
+  "scs.button.freezing_history_all": "[F.History All]",
+  
+  "scs.history.title": "ScS Violation History",
+  "scs.history.filter.all": "All",
+  "scs.history.filter.violations": "Violations",
+  "scs.history.filter.checks": "Checks",
+  "scs.history.filter.serious": "Serious",
+  "scs.history.filter.dupeip": "DupeIP",
+  "scs.history.stats": "Total entries: %d | Violations: %d | DupeIP: %d"
+}
+

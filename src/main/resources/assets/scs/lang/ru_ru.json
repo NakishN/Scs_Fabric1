@@ -1,0 +1,53 @@
+{
+  "key.scs.toggle_hud": "Переключить HUD",
+  "key.scs.show_history": "Показать историю",
+  "key.scs.clear_entries": "Очистить записи",
+  "key.scs.shaurma_tap": "Тап шаурмы",
+  "key.scs.shaurma_menu": "Меню шаурмы",
+  "key.scs.hud_config": "Настройки HUD",
+  "key.scs.hud_edit": "Режим редактирования HUD",
+  "category.scs": "ScS Enhanced",
+  
+  "scs.hud.toggle.on": "HUD включен",
+  "scs.hud.toggle.off": "HUD выключен",
+  "scs.history.total": "Всего записей: %d",
+  "scs.entries.cleared": "Все записи очищены",
+  "scs.command.queue_cleared": "Очередь команд очищена",
+  "scs.command.delay_set": "Задержка установлена: %dms",
+  
+  "scs.shaurma.tap.message": "Вкусная шаурма!",
+  "scs.shaurma.bonus.double": "ДВОЙНАЯ ШАУРМА!",
+  "scs.shaurma.bonus.triple": "ТРОЙНАЯ ШАУРМА!",
+  "scs.shaurma.bonus.mega": "МЕГА ШАУРМА!",
+  "scs.shaurma.bonus.legendary": "ЛЕГЕНДАРНАЯ ШАУРМА!",
+  "scs.shaurma.reward": "+%d шаурмы! Всего: %d",
+  "scs.shaurma.stats.title": "=== ШАУРМА СТАТИСТИКА ===",
+  "scs.shaurma.stats.total": "Всего шаурмы: %d",
+  "scs.shaurma.stats.taps": "Всего тапов: %d",
+  "scs.shaurma.stats.average": "Среднее: %.2f",
+  
+  "scs.achievement.unlocked": "ДОСТИЖЕНИЕ РАЗБЛОКИРОВАНО!",
+  "scs.achievement.first_tap": "Первый тап",
+  "scs.achievement.hundred_taps": "Столетие",
+  "scs.achievement.thousand_taps": "Тысячник",
+  "scs.achievement.hundred_shaurma": "Коллекционер",
+  "scs.achievement.thousand_shaurma": "Миллионер",
+  "scs.achievement.ten_thousand_shaurma": "Олигарх",
+  
+  "scs.button.check": "[Проверить]",
+  "scs.button.spectate": "[Спек]",
+  "scs.button.activity": "[Активность]",
+  "scs.button.history": "[История]",
+  "scs.button.copy_all": "[Копировать все]",
+  "scs.button.history_all": "[История всех]",
+  "scs.button.freezing_history_all": "[F.История всех]",
+  
+  "scs.history.title": "История нарушений ScS",
+  "scs.history.filter.all": "Все",
+  "scs.history.filter.violations": "Нарушения",
+  "scs.history.filter.checks": "Проверки",
+  "scs.history.filter.serious": "Серьезные",
+  "scs.history.filter.dupeip": "DupeIP",
+  "scs.history.stats": "Всего записей: %d | Нарушений: %d | DupeIP: %d"
+}
+
