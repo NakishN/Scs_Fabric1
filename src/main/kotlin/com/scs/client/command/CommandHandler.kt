@@ -21,22 +21,34 @@ object CommandHandler {
                 false // Блокируем отправку команды на сервер
             } else {
                 // Перехватываем команды /history для обработки очереди DupeIP
-                if (command.startsWith("/history ") && DupeIPQueueManager.hasQueue()) {
-                    // Команда отправится на сервер, затем через 1 секунду обработаем следующего игрока из очереди
-                    val delayMs = 1000L // 1 секунда задержка между проверками
+                if (command.startsWith("/history ")) {
+                    val hasQueue = DupeIPQueueManager.hasQueue()
+                    val queueSize = if (hasQueue) DupeIPQueueManager.getQueueSize() else 0
                     
-                    // Запускаем обработку следующего игрока из очереди через 1 секунду после отправки команды
-                    Thread {
-                        try {
-                            Thread.sleep(delayMs) // Ждем 1 секунду
-                            // После задержки обрабатываем следующего игрока из очереди
-                            if (DupeIPQueueManager.hasQueue()) {
-                                DupeIPQueueManager.processNextFromQueue()
+                    Scs.LOGGER.info("[ScS] History command detected: $command (hasQueue: $hasQueue, queueSize: $queueSize)")
+                    
+                    if (hasQueue) {
+                        // Команда отправится на сервер, затем через 1 секунду обработаем следующего игрока из очереди
+                        val delayMs = 1000L // 1 секунда задержка между проверками
+                        
+                        // Запускаем обработку следующего игрока из очереди через 1 секунду после отправки команды
+                        // Используем отдельный поток для задержки, чтобы не блокировать отправку команды
+                        Thread {
+                            try {
+                                Thread.sleep(delayMs) // Ждем 1 секунду
+                                // После задержки обрабатываем следующего игрока из очереди
+                                // processNextFromQueue отправляет команду, которая снова попадет в этот обработчик
+                                if (DupeIPQueueManager.hasQueue()) {
+                                    Scs.LOGGER.info("[ScS] Processing next player from queue (${DupeIPQueueManager.getQueueSize()} remaining)")
+                                    DupeIPQueueManager.processNextFromQueue()
+                                } else {
+                                    Scs.LOGGER.info("[ScS] Queue is empty, finishing")
+                                }
+                            } catch (e: Exception) {
+                                Scs.LOGGER.error("[ScS] Error processing DupeIP queue", e)
                             }
-                        } catch (e: Exception) {
-                            Scs.LOGGER.error("[ScS] Error processing DupeIP queue", e)
-                        }
-                    }.start()
+                        }.start()
+                    }
                 }
                 true // Разрешаем обычные команды
             }

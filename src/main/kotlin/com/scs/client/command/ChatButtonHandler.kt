@@ -117,10 +117,13 @@ object ChatButtonHandler {
             return Text.literal(text).formatted(color)
         }
         
-        // Сохраняем всех игроков для обработки
+        // Сохраняем всех игроков для обработки ПЕРЕД созданием кнопки
+        // Важно: очередь должна быть установлена до того, как команда будет отправлена
         DupeIPQueueManager.setQueuePlayers(players, commandPrefix)
+        Scs.LOGGER.info("[ScS] Queue set for button: ${players.size} players, first: ${players.first()}")
         
         // Создаем кнопку, которая при клике запускает обработку очереди
+        // Первая команда будет отправлена через ClickEvent, остальные через очередь
         return Text.literal(text)
             .formatted(color)
             .styled { style ->
