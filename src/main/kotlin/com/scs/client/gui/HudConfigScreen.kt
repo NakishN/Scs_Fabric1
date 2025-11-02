@@ -20,12 +20,12 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
     // Временные позиции для перетаскивания
     private var tempMainPanelX = ScsConfig.hudX
     private var tempMainPanelY = ScsConfig.hudY
-    private var tempDupeIPPanelX = ScsConfig.dupeIPPanelX
-    private var tempDupeIPPanelY = ScsConfig.dupeIPPanelY
+    private var tempOnlinePanelX = ScsConfig.onlinePanelX
+    private var tempOnlinePanelY = ScsConfig.onlinePanelY
     
     // Чекбоксы для включения/выключения панелей
     private lateinit var showMainPanelCheckbox: CheckboxWidget
-    private lateinit var showDupeIPPanelCheckbox: CheckboxWidget
+    private lateinit var showOnlinePanelCheckbox: CheckboxWidget
     
     override fun init() {
         super.init()
@@ -47,27 +47,27 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
             .build()
         addDrawableChild(showMainPanelCheckbox)
         
-        showDupeIPPanelCheckbox = CheckboxWidget.builder(
-            Text.literal("Показывать панель DupeIP"),
+        showOnlinePanelCheckbox = CheckboxWidget.builder(
+            Text.literal("Показывать панель онлайн"),
             textRenderer
         ).pos(20, checkboxY + spacing)
-            .checked(ScsConfig.showDupeIPPanel)
+            .checked(ScsConfig.showOnlinePanel)
             .callback { _, checked ->
-                ScsConfig.showDupeIPPanel = checked
+                ScsConfig.showOnlinePanel = checked
                 ScsConfig.save()
             }
             .build()
-        addDrawableChild(showDupeIPPanelCheckbox)
+        addDrawableChild(showOnlinePanelCheckbox)
         
         // Кнопки управления позицией
         addDrawableChild(ButtonWidget.builder(
             Text.literal("Сбросить позиции"),
             { resetPositions() }
-        ).dimensions(20, checkboxY + spacing * 2, 150, 20)
+        ).dimensions(20, checkboxY + spacing * 3, 150, 20)
             .build())
         
         // Кнопки для точной настройки позиций "Основная панель"
-        val mainButtonsY = checkboxY + spacing * 3
+        val mainButtonsY = checkboxY + spacing * 4
         addDrawableChild(ButtonWidget.builder(
             Text.literal("▲ Основная"),
             { moveMainPanel(0, -10) }
@@ -92,30 +92,30 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
         ).dimensions(95, mainButtonsY + 25, 70, 20)
             .build())
         
-        // Кнопки для DupeIP панели
-        val dupeIPButtonsY = checkboxY + spacing * 5
+        // Кнопки для онлайн панели
+        val onlineButtonsY = checkboxY + spacing * 6
         addDrawableChild(ButtonWidget.builder(
-            Text.literal("▲ DupeIP"),
-            { moveDupeIPPanel(0, -10) }
-        ).dimensions(20, dupeIPButtonsY, 70, 20)
+            Text.literal("▲ Онлайн"),
+            { moveOnlinePanel(0, -10) }
+        ).dimensions(20, onlineButtonsY, 70, 20)
             .build())
         
         addDrawableChild(ButtonWidget.builder(
-            Text.literal("▼ DupeIP"),
-            { moveDupeIPPanel(0, 10) }
-        ).dimensions(95, dupeIPButtonsY, 70, 20)
+            Text.literal("▼ Онлайн"),
+            { moveOnlinePanel(0, 10) }
+        ).dimensions(95, onlineButtonsY, 70, 20)
             .build())
         
         addDrawableChild(ButtonWidget.builder(
-            Text.literal("◄ DupeIP"),
-            { moveDupeIPPanel(-10, 0) }
-        ).dimensions(20, dupeIPButtonsY + 25, 70, 20)
+            Text.literal("◄ Онлайн"),
+            { moveOnlinePanel(-10, 0) }
+        ).dimensions(20, onlineButtonsY + 25, 70, 20)
             .build())
         
         addDrawableChild(ButtonWidget.builder(
-            Text.literal("► DupeIP"),
-            { moveDupeIPPanel(10, 0) }
-        ).dimensions(95, dupeIPButtonsY + 25, 70, 20)
+            Text.literal("► Онлайн"),
+            { moveOnlinePanel(10, 0) }
+        ).dimensions(95, onlineButtonsY + 25, 70, 20)
             .build())
         
         // Кнопка закрытия
@@ -184,13 +184,13 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
                 }
             }
             
-            // Проверяем клик по DupeIP панели
-            if (ScsConfig.showDupeIPPanel) {
-                val x = if (tempDupeIPPanelX < 0) screenWidth + tempDupeIPPanelX else tempDupeIPPanelX
-                val y = if (tempDupeIPPanelY < 0) screenHeight + tempDupeIPPanelY else tempDupeIPPanelY
+            // Проверяем клик по онлайн панели
+            if (ScsConfig.showOnlinePanel && ScsConfig.enableOnlineStatus) {
+                val x = if (tempOnlinePanelX < 0) screenWidth + tempOnlinePanelX else tempOnlinePanelX
+                val y = if (tempOnlinePanelY < 0) screenHeight + tempOnlinePanelY else tempOnlinePanelY
                 
-                if (mouseX.toInt() in x..(x + 200) && mouseY.toInt() in y..(y + 40)) {
-                    draggingPanel = "dupeip"
+                if (mouseX.toInt() in x..(x + 250) && mouseY.toInt() in y..(y + 150)) {
+                    draggingPanel = "online"
                     dragOffsetX = mouseX.toInt() - x
                     dragOffsetY = mouseY.toInt() - y
                     return true
@@ -224,7 +224,7 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
                     tempMainPanelX = newX.coerceIn(-screenWidth + 160, screenWidth - 160)
                     tempMainPanelY = newY.coerceIn(-screenHeight + 60, screenHeight - 60)
                 }
-                "dupeip" -> {
+                "online" -> {
                     var newX = mouseX.toInt() - dragOffsetX
                     var newY = mouseY.toInt() - dragOffsetY
                     
@@ -235,8 +235,8 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
                         newY = newY - screenHeight
                     }
                     
-                    tempDupeIPPanelX = newX.coerceIn(-screenWidth + 210, screenWidth - 210)
-                    tempDupeIPPanelY = newY.coerceIn(-screenHeight + 50, screenHeight - 50)
+                    tempOnlinePanelX = newX.coerceIn(-screenWidth + 260, screenWidth - 260)
+                    tempOnlinePanelY = newY.coerceIn(-screenHeight + 160, screenHeight - 160)
                 }
             }
             return true
@@ -277,18 +277,18 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
             )
         }
         
-        // DupeIP панель (превью)
-        if (ScsConfig.showDupeIPPanel) {
-            val x = if (tempDupeIPPanelX < 0) screenWidth + tempDupeIPPanelX else tempDupeIPPanelX
-            val y = if (tempDupeIPPanelY < 0) screenHeight + tempDupeIPPanelY else tempDupeIPPanelY
+        // Онлайн панель (превью)
+        if (ScsConfig.showOnlinePanel && ScsConfig.enableOnlineStatus) {
+            val x = if (tempOnlinePanelX < 0) screenWidth + tempOnlinePanelX else tempOnlinePanelX
+            val y = if (tempOnlinePanelY < 0) screenHeight + tempOnlinePanelY else tempOnlinePanelY
             
-            val isHovering = mouseX in x..(x + 200) && mouseY in y..(y + 40)
-            val bgColor = if (isHovering) 0xAA4444FF.toInt() else 0xAA444400.toInt()
+            val isHovering = mouseX in x..(x + 250) && mouseY in y..(y + 150)
+            val bgColor = if (isHovering) 0xAA00FF00.toInt() else 0xAA000000.toInt()
             
-            context.fill(x - 2, y - 2, x + 200, y + 40, bgColor)
+            context.fill(x - 2, y - 2, x + 250, y + 150, bgColor)
             context.drawTextWithShadow(
                 textRenderer,
-                Text.literal("DupeIP панель").formatted(Formatting.BLUE),
+                Text.literal("Онлайн панель").formatted(Formatting.GREEN),
                 x,
                 y,
                 0xFFFFFF
@@ -306,28 +306,28 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
         tempMainPanelY = tempMainPanelY.coerceIn(-height + 60, maxY)
     }
     
-    private fun moveDupeIPPanel(dx: Int, dy: Int) {
-        tempDupeIPPanelX += dx
-        tempDupeIPPanelY += dy
-        val maxX = width - 210
-        val maxY = height - 50
-        tempDupeIPPanelX = tempDupeIPPanelX.coerceIn(-width + 210, maxX)
-        tempDupeIPPanelY = tempDupeIPPanelY.coerceIn(-height + 50, maxY)
+    private fun moveOnlinePanel(dx: Int, dy: Int) {
+        tempOnlinePanelX += dx
+        tempOnlinePanelY += dy
+        val maxX = width - 260
+        val maxY = height - 160
+        tempOnlinePanelX = tempOnlinePanelX.coerceIn(-width + 260, maxX)
+        tempOnlinePanelY = tempOnlinePanelY.coerceIn(-height + 160, maxY)
     }
     
     private fun resetPositions() {
         tempMainPanelX = -320
         tempMainPanelY = 6
-        tempDupeIPPanelX = -320
-        tempDupeIPPanelY = 100
+        tempOnlinePanelX = 320
+        tempOnlinePanelY = 6
     }
     
     private fun saveAndClose() {
         ScsConfig.hudX = tempMainPanelX
         ScsConfig.hudY = tempMainPanelY
-        // Сохраняем независимые координаты DupeIP панели
-        ScsConfig.dupeIPPanelX = tempDupeIPPanelX
-        ScsConfig.dupeIPPanelY = tempDupeIPPanelY
+        // Сохраняем независимые координаты онлайн панели
+        ScsConfig.onlinePanelX = tempOnlinePanelX
+        ScsConfig.onlinePanelY = tempOnlinePanelY
         
         // Сохраняем конфигурацию в файл
         ScsConfig.save()

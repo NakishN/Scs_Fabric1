@@ -39,7 +39,9 @@ object ChatEventHandler {
         // Перехватываем и модифицируем игровые сообщения чата ДО отображения
         ClientReceiveMessageEvents.MODIFY_GAME.register { message: Text, _ ->
             try {
+                // Получаем текст сообщения
                 val messageText = message.string
+                
                 if (messageText.isNotBlank()) {
                     // Обрабатываем сообщение для мониторинга
                     ChatMonitor.processMessage(messageText, "CHAT")
@@ -50,7 +52,7 @@ object ChatEventHandler {
                     }
                 }
             } catch (e: Exception) {
-                // Игнорируем ошибки
+                com.scs.Scs.LOGGER.error("[ScS] Error processing chat message", e)
             }
             message // Возвращаем исходное сообщение
         }

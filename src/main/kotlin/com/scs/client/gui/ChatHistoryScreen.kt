@@ -21,7 +21,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
     private var filterViolations = false
     private var filterChecks = false
     private var filterSerious = false
-    private var filterDupeIP = false
     private var filterPlayerChat = false
     private var selectedPlayer: String? = null
     
@@ -29,7 +28,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
     private lateinit var violationsCheckbox: CheckboxWidget
     private lateinit var checksCheckbox: CheckboxWidget
     private lateinit var seriousCheckbox: CheckboxWidget
-    private lateinit var dupeIPCheckbox: CheckboxWidget
     private lateinit var playerChatCheckbox: CheckboxWidget
     private lateinit var closeButton: ButtonWidget
     
@@ -61,7 +59,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
                     filterViolations = false
                     filterChecks = false
                     filterSerious = false
-                    filterDupeIP = false
                     filterPlayerChat = false
                 }
                 updateEntries()
@@ -108,24 +105,11 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             .build()
         addDrawableChild(seriousCheckbox)
         
-        dupeIPCheckbox = CheckboxWidget.builder(
-            Text.literal("DupeIP"),
-            textRenderer
-        ).pos(checkboxX, checkboxY + checkboxSpacing * 4)
-            .checked(filterDupeIP)
-            .callback { _, checked ->
-                filterDupeIP = checked
-                filterAll = false
-                updateEntries()
-            }
-            .build()
-        addDrawableChild(dupeIPCheckbox)
-        
         // Чекбокс для чата игрока
         playerChatCheckbox = CheckboxWidget.builder(
             Text.literal("Чат игрока"),
             textRenderer
-        ).pos(checkboxX, checkboxY + checkboxSpacing * 5)
+        ).pos(checkboxX, checkboxY + checkboxSpacing * 4)
             .checked(filterPlayerChat)
             .callback { _, checked ->
                 filterPlayerChat = checked
@@ -203,24 +187,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
                 }
         }
         
-        if (filterAll || filterDupeIP) {
-            // Добавляем DupeIP записи
-            ChatMonitor.entries.filter { it.kind == "DUPEIP_SCAN" || it.kind == "DUPEIP_RESULT" }
-                .forEach { entry ->
-                    entries.add(DisplayEntry(entry.kind, entry.text, entry.timestamp, entry.playerName))
-                }
-            
-            // Добавляем DupeIP результаты
-            ChatMonitor.dupeIPResults.forEach { dupeIP ->
-                entries.add(DisplayEntry(
-                    "DUPEIP_RESULT",
-                    dupeIP.getFormattedText(),
-                    dupeIP.timestamp,
-                    dupeIP.scannedPlayer
-                ))
-            }
-        }
-        
         // Сортируем по времени (новые сверху)
         entries.sortByDescending { it.timestamp.toEpochMilli() }
         
@@ -246,7 +212,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
         val statsText = if (filterPlayerChat && selectedPlayer != null) {
             "Чат игрока: $selectedPlayer | Сообщений: ${playerChatEntries.size}"
         } else {
-            "Всего записей: ${entries.size} | Нарушений: ${ChatMonitor.violations.size} | DupeIP: ${ChatMonitor.dupeIPResults.size}"
+            "Всего записей: ${entries.size} | Нарушений: ${ChatMonitor.violations.size}"
         }
         context.drawTextWithShadow(
             textRenderer,
@@ -334,8 +300,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
         return when (kind) {
             "CHECK" -> "✓"
             "VIOLATION" -> "⚠"
-            "DUPEIP_SCAN" -> "🔍"
-            "DUPEIP_RESULT" -> "🔗"
             "CHAT" -> "💬"
             else -> "•"
         }
@@ -345,7 +309,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
         return when (kind) {
             "CHECK" -> Formatting.GREEN
             "VIOLATION" -> Formatting.GOLD
-            "DUPEIP_SCAN", "DUPEIP_RESULT" -> Formatting.BLUE
             "CHAT" -> Formatting.LIGHT_PURPLE
             else -> Formatting.WHITE
         }
@@ -355,7 +318,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
         return when (kind) {
             "CHECK" -> parseColor(ScsConfig.checkColor)
             "VIOLATION" -> parseColor(ScsConfig.violationColor)
-            "DUPEIP_SCAN", "DUPEIP_RESULT" -> parseColor(ScsConfig.acColor)
             else -> 0xFFFFFF
         }
     }

@@ -100,20 +100,27 @@ object HudMouseHandler {
             }
         }
         
-        // Проверяем клик по DupeIP панели
-        if (ScsConfig.showDupeIPPanel) {
-            val x = if (ScsConfig.dupeIPPanelX < 0) screenWidth + ScsConfig.dupeIPPanelX else ScsConfig.dupeIPPanelX
-            val y = if (ScsConfig.dupeIPPanelY < 0) screenHeight + ScsConfig.dupeIPPanelY else ScsConfig.dupeIPPanelY
+        // Проверяем клик по онлайн панели
+        if (ScsConfig.showOnlinePanel && ScsConfig.enableOnlineStatus) {
+            val x = if (ScsConfig.onlinePanelX < 0) screenWidth + ScsConfig.onlinePanelX else ScsConfig.onlinePanelX
+            val y = if (ScsConfig.onlinePanelY < 0) screenHeight + ScsConfig.onlinePanelY else ScsConfig.onlinePanelY
             
             val panelWidth = 250
-            val panelHeight = 40
+            // Вычисляем реальную высоту панели на основе количества игроков
+            val players = com.scs.client.online.OnlineStatusService.onlinePlayers.size
+            val panelHeight = if (players == 0) {
+                30 // Высота для пустой панели
+            } else {
+                // Приблизительная высота: заголовок + игроки (по 15px каждый + 10px если есть сервер)
+                20 + players * 20
+            }.coerceAtMost(200) // Максимальная высота для клика
             
             if (mouseX.toInt() in x..(x + panelWidth) && mouseY.toInt() in y..(y + panelHeight)) {
-                draggingPanel = "dupeip"
+                draggingPanel = "online"
                 dragStartX = mouseX
                 dragStartY = mouseY
-                panelStartX = ScsConfig.dupeIPPanelX
-                panelStartY = ScsConfig.dupeIPPanelY
+                panelStartX = ScsConfig.onlinePanelX
+                panelStartY = ScsConfig.onlinePanelY
                 return true
             }
         }
@@ -157,7 +164,7 @@ object HudMouseHandler {
                     lastSaveTime = System.currentTimeMillis()
                 }
             }
-            "dupeip" -> {
+            "online" -> {
                 var newX = panelStartX + deltaX.toInt()
                 var newY = panelStartY + deltaY.toInt()
                 
@@ -168,8 +175,8 @@ object HudMouseHandler {
                     newY = (newY - screenHeight).toInt()
                 }
                 
-                ScsConfig.dupeIPPanelX = newX.coerceIn(-screenWidth + 250, screenWidth - 250)
-                ScsConfig.dupeIPPanelY = newY.coerceIn(-screenHeight + 50, screenHeight - 50)
+                ScsConfig.onlinePanelX = newX.coerceIn(-screenWidth + 250, screenWidth - 250)
+                ScsConfig.onlinePanelY = newY.coerceIn(-screenHeight + 150, screenHeight - 150)
                 
                 // Сохраняем конфигурацию при перетаскивании (с задержкой, чтобы не спамить)
                 if (System.currentTimeMillis() - lastSaveTime > 500) {

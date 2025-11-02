@@ -22,13 +22,8 @@ object ChatMonitor {
     val entries = ConcurrentLinkedDeque<Entry>()
     val violations = ConcurrentLinkedDeque<ViolationEntry>()
     val playerChat = ConcurrentLinkedDeque<PlayerChatEntry>()
-    val dupeIPResults = ConcurrentLinkedDeque<DupeIPEntry>()
 
     private val processedMessages = mutableSetOf<String>()
-
-    // DupeIP отслеживание
-    var lastScannedPlayer: String? = null
-    var lastDupeIPScanTime: Long = 0
 
     // Паттерны для поиска
     private val anticheatPatterns = listOf(
@@ -40,37 +35,37 @@ object ChatMonitor {
     )
 
     // Паттерны для системных сообщений [System] [CHAT]
+    // Учитываем возможные временные метки в любом формате после [System] [CHAT]
     private val checkPatterns = listOf(
-        Regex("""\[System\]\s*\[CHAT\]\s*[►▶]\s*Проверка.*успешно.*начата.*""", RegexOption.IGNORE_CASE),
-        Regex("""\[System\]\s*\[CHAT\]\s*Проверка.*успешно.*начата.*""", RegexOption.IGNORE_CASE)
+        Regex("""\[System\]\s*\[CHAT\].*[►▶]\s*Проверка.*успешно.*начата.*""", RegexOption.IGNORE_CASE),
+        Regex("""\[System\]\s*\[CHAT\].*Проверка.*успешно.*начата.*""", RegexOption.IGNORE_CASE)
     )
 
     private val playerPatterns = listOf(
-        // Формат: [System] [CHAT]    Проверяемый игрок: PlayerName
+        // Формат: [System] [CHAT] [ЧЧ:ММ:СС]    Проверяемый игрок: PlayerName
         Regex("""\[System\]\s*\[CHAT\].*Проверяемый\s+игрок\s*[:：]\s*([a-zA-Z0-9_]+).*""", RegexOption.IGNORE_CASE),
         Regex("""\[System\]\s*\[CHAT\].*игрок\s*[:：]\s*([a-zA-Z0-9_]+).*""", RegexOption.IGNORE_CASE)
     )
 
     private val modePatterns = listOf(
-        // Формат: [System] [CHAT]    Вы находитесь на режиме: Mode
+        // Формат: [System] [CHAT] [ЧЧ:ММ:СС]    Вы находитесь на режиме: Mode
         Regex("""\[System\]\s*\[CHAT\].*Вы\s+находитесь\s+на\s+режиме\s*[:：]\s*(.+?)(?:\s*$|\.)""", RegexOption.IGNORE_CASE),
         Regex("""\[System\]\s*\[CHAT\].*режим\s*[:：]\s*(.+?)(?:\s*$|\.)""", RegexOption.IGNORE_CASE)
     )
 
     // Паттерны для системного чата [System] [CHAT]
+    // Учитываем возможные временные метки в любом формате после [System] [CHAT]
     private val systemChatPatterns = listOf(
-        // Формат: [System] [CHAT] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» PlayerName » message
-        Regex("""\[System\]\s*\[CHAT\]\s*ᴄ\s*\|\s*«ᴄʜᴇᴀᴛᴇʀ»\s*([a-zA-Z0-9_]+)\s*»\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Формат: [System] [CHAT] ʟ | «sᴜᴘᴇʀᴠɪsᴏʀ» PlayerName » message
-        Regex("""\[System\]\s*\[CHAT\]\s*ʟ\s*\|\s*«sᴜᴘᴇʀᴠɪsᴏʀ»\s*([a-zA-Z0-9_]+)\s+.*?»\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Формат: [System] [CHAT] PlayerName: message (обычный чат)
-        Regex("""\[System\]\s*\[CHAT\]\s*([a-zA-Z0-9_]+)\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Формат: [System] [CHAT] [ЧЧ:ММ:СС] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» PlayerName » message
+        Regex("""\[System\]\s*\[CHAT\].*ᴄ\s*\|\s*«ᴄʜᴇᴀᴛᴇʀ»\s*([a-zA-Z0-9_]+)\s*»\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Формат: [System] [CHAT] [ЧЧ:ММ:СС] ʟ | «sᴜᴘᴇʀᴠɪsᴏʀ» PlayerName » message
+        Regex("""\[System\]\s*\[CHAT\].*ʟ\s*\|\s*«sᴜᴘᴇʀᴠɪsᴏʀ»\s*([a-zA-Z0-9_]+)\s+.*?»\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Формат: [System] [CHAT] [ЧЧ:ММ:СС] PlayerName: message (обычный чат)
+        Regex("""\[System\]\s*\[CHAT\].*([a-zA-Z0-9_]+)\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
         // Общий формат для чата игроков
-        Regex("""\[System\]\s*\[CHAT\]\s*[«»]\s*([a-zA-Z0-9_]+)\s*[»]\s*(.+)""", RegexOption.IGNORE_CASE)
+        Regex("""\[System\]\s*\[CHAT\].*[«»]\s*([a-zA-Z0-9_]+)\s*[»]\s*(.+)""", RegexOption.IGNORE_CASE)
     )
 
-    private val dupeIPScanPattern = Regex(""".*Сканирование\s+(\w+).*""", RegexOption.IGNORE_CASE)
-    private val dupeIPResultsPattern = Regex("""^([A-Za-z0-9_]+(?:,\s*[A-Za-z0-9_]+)+)$""")
 
     fun processMessage(text: String, source: String = "UNKNOWN") {
         if (text.isBlank()) return
@@ -80,6 +75,11 @@ object ChatMonitor {
         // Логируем если включено
         if (ScsConfig.logAllChat) {
             logMessage(source, cleanText)
+        }
+
+        // Логируем для отладки системных сообщений
+        if (text.contains("[System]") && text.contains("[CHAT]")) {
+            Scs.LOGGER.debug("[ScS] Processing System CHAT message: $text")
         }
 
         // Проверяем сообщение
@@ -92,70 +92,41 @@ object ChatMonitor {
     private fun checkMessage(text: String, source: String) {
         if (text.isBlank()) return
 
-        // Проверка на DupeIP сканирование
-        dupeIPScanPattern.matchEntire(text)?.let { match ->
-            val player = match.groupValues[1]
-            lastScannedPlayer = player
-            lastDupeIPScanTime = System.currentTimeMillis()
-        addEntry(Entry("DUPEIP_SCAN", "Сканирование DupeIP: $player", player))
-        SoundNotificationSystem.playDupeIPSound()
-        Scs.LOGGER.info("[ScS] DUPEIP scan detected: $player")
-        return
-        }
-
-        // Проверка на DupeIP результаты
-        if (lastScannedPlayer != null &&
-            System.currentTimeMillis() - lastDupeIPScanTime < 15000) {
-            dupeIPResultsPattern.matchEntire(text.trim())?.let { match ->
-                val nicknamesStr = match.groupValues[1]
-                val nicknames = nicknamesStr.split(",").map { it.trim() }.filter { it.isNotEmpty() }
-
-                if (nicknames.isNotEmpty()) {
-                    val dupeEntry = DupeIPEntry(lastScannedPlayer!!, nicknames)
-                    dupeIPResults.addFirst(dupeEntry)
-                    while (dupeIPResults.size > 20) {
-                        dupeIPResults.removeLast()
-                    }
-
-                    addEntry(Entry("DUPEIP_RESULT", dupeEntry.getFormattedText(), lastScannedPlayer))
-                    SoundNotificationSystem.playDupeIPSound()
-                    Scs.LOGGER.info("[ScS] DUPEIP results: $lastScannedPlayer -> ${nicknames.size} accounts")
-                }
-                lastScannedPlayer = null
-                return
-            }
-        }
-
         // Проверка на проверки
         for (pattern in checkPatterns) {
-            if (pattern.matches(text)) {
+            if (pattern.find(text) != null) {
                 addEntry(Entry("CHECK", "Проверка начата"))
-                Scs.LOGGER.info("[ScS] CHECK detected")
+                Scs.LOGGER.info("[ScS] CHECK detected in: $text")
                 return
             }
         }
 
         // Проверка на игрока
         for (pattern in playerPatterns) {
-            pattern.matchEntire(text)?.let { match ->
-                val player = match.groupValues[1]
-                if (isValidPlayerName(player)) {
-                    addEntry(Entry("CHECK", "Проверяемый: $player", player))
-                    // Начинаем сессию проверки для этого игрока
-                    com.scs.client.monitor.CheckSession.startCheck(player)
-                    Scs.LOGGER.info("[ScS] PLAYER detected: $player")
-                    return
+            pattern.find(text)?.let { match ->
+                if (match.groupValues.size >= 2) {
+                    val player = match.groupValues[1]
+                    if (isValidPlayerName(player)) {
+                        addEntry(Entry("CHECK", "Проверяемый: $player", player))
+                        // Начинаем сессию проверки для этого игрока
+                        com.scs.client.monitor.CheckSession.startCheck(player)
+                        Scs.LOGGER.info("[ScS] PLAYER detected: $player from: $text")
+                        return
+                    }
                 }
             }
         }
 
         // Проверка на режим
         for (pattern in modePatterns) {
-            pattern.matchEntire(text)?.let { match ->
-                val mode = match.groupValues[1].trim()
-                if (mode.isNotEmpty()) {
-                    addEntry(Entry("CHECK", "Режим: $mode"))
-                    return
+            pattern.find(text)?.let { match ->
+                if (match.groupValues.size >= 2) {
+                    val mode = match.groupValues[1].trim()
+                    if (mode.isNotEmpty()) {
+                        addEntry(Entry("CHECK", "Режим: $mode"))
+                        Scs.LOGGER.info("[ScS] MODE detected: $mode from: $text")
+                        return
+                    }
                 }
             }
         }
@@ -210,6 +181,9 @@ object ChatMonitor {
         // Проигрываем звук уведомления
         SoundNotificationSystem.playViolationSound(entry.isSerious)
 
+        // Отправляем нарушение на сервер
+        com.scs.client.online.OnlineStatusService.sendViolation(entry)
+
         if (entry.isSerious) {
             Scs.LOGGER.info("[ScS] SERIOUS VIOLATION: $player - $violation")
         }
@@ -245,10 +219,7 @@ object ChatMonitor {
         entries.clear()
         violations.clear()
         playerChat.clear()
-        dupeIPResults.clear()
         processedMessages.clear()
-        lastScannedPlayer = null
-        lastDupeIPScanTime = 0
         Scs.LOGGER.info("[ScS] All entries cleared")
     }
 
@@ -304,17 +275,5 @@ object ChatMonitor {
     ) {
         val kind = "CHAT"
         val text = "$playerName: $message"
-    }
-
-    data class DupeIPEntry(
-        val scannedPlayer: String,
-        val duplicateAccounts: List<String>,
-        val timestamp: Instant = Instant.now()
-    ) {
-        val totalDupes = duplicateAccounts.size
-
-        fun getFormattedText(): String {
-            return "DupeIP $scannedPlayer: $totalDupes дубл (${duplicateAccounts.joinToString(", ")})"
-        }
     }
 }

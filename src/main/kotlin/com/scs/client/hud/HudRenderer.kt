@@ -2,6 +2,7 @@ package com.scs.client.hud
 
 import com.scs.client.config.ScsConfig
 import com.scs.client.monitor.ChatMonitor
+import com.scs.client.online.OnlineStatusService
 import net.minecraft.client.MinecraftClient
 import net.minecraft.client.font.TextRenderer
 import net.minecraft.client.gui.DrawContext
@@ -42,24 +43,21 @@ object HudRenderer {
             mainPanelHeight = renderMainPanel(drawContext, textRenderer, x, currentY)
             currentY += mainPanelHeight
         }
-
-        // 2. Панель DupeIP (если включена и есть недавнее обнаружение)
-        if (ScsConfig.showDupeIPPanel) {
-            val latestDupeIP = ChatMonitor.dupeIPResults.firstOrNull()
-            if (latestDupeIP != null && isRecentDupeIP(latestDupeIP)) {
-                // Используем независимые координаты для DupeIP панели
-                val dupeIPX = if (ScsConfig.dupeIPPanelX < 0) {
-                    screenWidth + ScsConfig.dupeIPPanelX
-                } else {
-                    ScsConfig.dupeIPPanelX
-                }
-                val dupeIPY = if (ScsConfig.dupeIPPanelY < 0) {
-                    screenHeight + ScsConfig.dupeIPPanelY
-                } else {
-                    ScsConfig.dupeIPPanelY
-                }
-                renderDupeIPPanel(drawContext, textRenderer, dupeIPX, dupeIPY, latestDupeIP)
+        
+        // 2. Панель онлайн игроков (если включена)
+        if (ScsConfig.showOnlinePanel && ScsConfig.enableOnlineStatus) {
+            // Используем независимые координаты для онлайн панели
+            val onlineX = if (ScsConfig.onlinePanelX < 0) {
+                screenWidth + ScsConfig.onlinePanelX
+            } else {
+                ScsConfig.onlinePanelX
             }
+            val onlineY = if (ScsConfig.onlinePanelY < 0) {
+                screenHeight + ScsConfig.onlinePanelY
+            } else {
+                ScsConfig.onlinePanelY
+            }
+            renderOnlinePanel(drawContext, textRenderer, onlineX, onlineY)
         }
     }
     
@@ -118,80 +116,11 @@ object HudRenderer {
 
         return panelHeight + 4
     }
-    
-    /**
-     * Рендерит панель DupeIP (временная, показывается 30 секунд)
-     */
-    private fun renderDupeIPPanel(
-        drawContext: DrawContext,
-        textRenderer: TextRenderer,
-        x: Int,
-        y: Int,
-        dupeIPEntry: ChatMonitor.DupeIPEntry
-    ): Int {
-        val panelHeight = textRenderer.fontHeight * 3 + 6
-        val panelWidth = 250
-        
-        // Синий фон для DupeIP
-        // В режиме редактирования показываем рамку для перетаскивания
-        val bgColor = if (ScsConfig.hudEditMode) {
-            0x904444FF.toInt() // Более яркий синий в режиме редактирования
-        } else {
-            0x804444FF.toInt() // Синий с прозрачностью
-        }
-        drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
-        
-        // Рамка
-        val frameColor = if (ScsConfig.hudEditMode) {
-            0xFFFFFFFF.toInt() // Белая рамка в режиме редактирования
-        } else {
-            0xFF4444FF.toInt() // Синяя рамка
-        }
-        drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
-        drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
-        drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
-        drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
-        
-        // В режиме редактирования показываем подпись
-        if (ScsConfig.hudEditMode) {
-            val labelText = Text.literal("DupeIP панель")
-                .formatted(Formatting.YELLOW, Formatting.BOLD)
-            drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
-        }
-        
-        // Текст DupeIP
-        val header = Text.literal("🔍 DupeIP: ${dupeIPEntry.scannedPlayer}")
-            .formatted(Formatting.BLUE, Formatting.BOLD)
-        drawContext.drawTextWithShadow(textRenderer, header, x, y, 0xFFFFFF)
-        
-        // Список дублей (первые 5)
-        val dupesText = dupeIPEntry.duplicateAccounts.take(5).joinToString(", ")
-        val dupesDisplay = if (dupeIPEntry.duplicateAccounts.size > 5) {
-            "$dupesText... (+${dupeIPEntry.duplicateAccounts.size - 5})"
-        } else {
-            dupesText
-        }
-        val accountsText = Text.literal("Дублей: $dupesDisplay")
-            .formatted(Formatting.AQUA)
-        drawContext.drawTextWithShadow(textRenderer, accountsText, x, y + textRenderer.fontHeight + 2, 0xFFFFFF)
-        
-        return panelHeight + 4
-    }
-    
-    /**
-     * Проверяет, является ли DupeIP запись недавней (в пределах 30 секунд)
-     */
-    private fun isRecentDupeIP(entry: ChatMonitor.DupeIPEntry): Boolean {
-        val duration = Duration.between(entry.timestamp, Instant.now())
-        return duration.seconds < 30
-    }
 
     private fun getEntryText(entry: ChatMonitor.Entry): Text {
         val prefix = when (entry.kind) {
             "CHECK" -> "✓"
             "VIOLATION" -> "⚠"
-            "DUPEIP_SCAN" -> "🔍"
-            "DUPEIP_RESULT" -> "🔗"
             "CHAT" -> "💬"
             else -> "•"
         }
@@ -202,7 +131,7 @@ object HudRenderer {
         return when (kind) {
             "CHECK" -> parseColor(ScsConfig.checkColor)
             "VIOLATION" -> parseColor(ScsConfig.violationColor)
-            "AC", "DUPEIP_SCAN", "DUPEIP_RESULT" -> parseColor(ScsConfig.acColor)
+            "AC" -> parseColor(ScsConfig.acColor)
             else -> 0xFFFFFF // Белый
         }
     }
@@ -223,6 +152,118 @@ object HudRenderer {
             seconds < 60 -> "${seconds}s"
             seconds < 3600 -> "${seconds / 60}m"
             else -> "${seconds / 3600}h"
+        }
+    }
+    
+    /**
+     * Рендерит панель онлайн игроков
+     */
+    private fun renderOnlinePanel(
+        drawContext: DrawContext,
+        textRenderer: TextRenderer,
+        x: Int,
+        y: Int
+    ): Int {
+        val players = OnlineStatusService.onlinePlayers.toList().take(10) // Показываем максимум 10 игроков
+        
+        if (players.isEmpty()) {
+            // Показываем пустую панель с сообщением
+            val panelWidth = 200
+            val panelHeight = textRenderer.fontHeight + 4
+            
+            val bgColor = if (ScsConfig.hudEditMode) {
+                0x9000FF00.toInt() // Зеленый с прозрачностью в режиме редактирования
+            } else {
+                0x80000000.toInt() // Черный с прозрачностью
+            }
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
+            
+            if (ScsConfig.hudEditMode) {
+                val frameColor = 0xFFFFFFFF.toInt()
+                drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
+                drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
+                drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
+                drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
+                
+                val labelText = Text.literal("Онлайн панель")
+                    .formatted(Formatting.YELLOW, Formatting.BOLD)
+                drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
+            }
+            
+            val emptyText = Text.literal("🟢 Онлайн: 0")
+                .formatted(Formatting.GREEN)
+            drawContext.drawTextWithShadow(textRenderer, emptyText, x, y, 0xFFFFFF)
+            
+            return panelHeight + 4
+        }
+        
+        // Фоновая панель
+        val panelWidth = 250
+        var panelHeight = textRenderer.fontHeight + 4 // Заголовок
+        // Высота зависит от количества игроков и наличия серверов
+        for (player in players) {
+            panelHeight += textRenderer.fontHeight + 2 // Имя игрока
+            if (player.serverAddress != "unknown" && player.serverAddress != "singleplayer") {
+                panelHeight += textRenderer.fontHeight + 1 // Сервер
+            }
+        }
+        panelHeight += 4 // Отступы
+        
+        val bgColor = if (ScsConfig.hudEditMode) {
+            0x9000FF00.toInt() // Зеленый с прозрачностью в режиме редактирования
+        } else {
+            0x80000000.toInt() // Черный с прозрачностью
+        }
+        drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
+        
+        // В режиме редактирования рисуем рамку для перетаскивания
+        if (ScsConfig.hudEditMode) {
+            val frameColor = 0xFFFFFFFF.toInt() // Белая рамка
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor) // Верхняя
+            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor) // Нижняя
+            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor) // Левая
+            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor) // Правая
+            
+            // Подпись "Онлайн панель" в режиме редактирования
+            val labelText = Text.literal("Онлайн панель")
+                .formatted(Formatting.YELLOW, Formatting.BOLD)
+            drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
+        }
+        
+        // Заголовок
+        val headerText = Text.literal("🟢 Онлайн: ${players.size}")
+            .formatted(Formatting.GREEN, Formatting.BOLD)
+        drawContext.drawTextWithShadow(textRenderer, headerText, x, y, 0xFFFFFF)
+        
+        // Рисуем список игроков
+        var currentY = y + textRenderer.fontHeight + 4
+        for (player in players) {
+            val playerText = Text.literal("  • ${player.playerName}")
+                .formatted(Formatting.WHITE)
+            drawContext.drawTextWithShadow(textRenderer, playerText, x, currentY, 0xFFFFFF)
+            
+            // Показываем сервер под именем (если есть место)
+            if (player.serverAddress != "unknown" && player.serverAddress != "singleplayer") {
+                val serverText = Text.literal("    → ${player.serverAddress}")
+                    .formatted(Formatting.GRAY)
+                currentY += textRenderer.fontHeight + 1
+                drawContext.drawTextWithShadow(textRenderer, serverText, x, currentY, 0xFFFFFF)
+            }
+            
+            currentY += textRenderer.fontHeight + 2
+        }
+        
+        return panelHeight + 4
+    }
+    
+    /**
+     * Форматирует время онлайн в читаемый вид
+     */
+    private fun formatOnlineTime(seconds: Long): String {
+        return when {
+            seconds < 60 -> "${seconds}с"
+            seconds < 3600 -> "${seconds / 60}м"
+            else -> "${seconds / 3600}ч ${(seconds % 3600) / 60}м"
         }
     }
 }

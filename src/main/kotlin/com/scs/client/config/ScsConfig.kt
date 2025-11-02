@@ -18,11 +18,11 @@ object ScsConfig {
     
     // Настройки видимости панелей
     var showMainPanel = true      // Основная панель (нарушения, проверки)
-    var showDupeIPPanel = true    // Панель DupeIP
+    var showOnlinePanel = true    // Панель онлайн игроков
     
     // Позиции панелей (независимые координаты)
-    var dupeIPPanelX = -320       // X координата DupeIP панели
-    var dupeIPPanelY = 100        // Y координата DupeIP панели
+    var onlinePanelX = 320         // X координата онлайн панели
+    var onlinePanelY = 6          // Y координата онлайн панели
     
     // Режим редактирования HUD
     var hudEditMode = false       // Режим редактирования HUD (перетаскивание панелей)
@@ -52,6 +52,10 @@ object ScsConfig {
     var shaurmaBaseReward = 1
     var shaurmaChatMessages = true
 
+    // Онлайн статус
+    var enableOnlineStatus = true
+    var onlineStatusUrl = "https://cj814820.tw1.ru/api.php" // URL веб-сервера для онлайн статуса
+    
     // Расширенные
     var violationKeywords = listOf(
         "tried to move abnormally",
@@ -97,10 +101,10 @@ object ScsConfig {
             config["showLast"]?.let { showLast = it.toIntOrNull() ?: 15 }
             
             config["showMainPanel"]?.let { showMainPanel = it.toBoolean() }
-            config["showDupeIPPanel"]?.let { showDupeIPPanel = it.toBoolean() }
+            config["showOnlinePanel"]?.let { showOnlinePanel = it.toBoolean() }
             
-            config["dupeIPPanelX"]?.let { dupeIPPanelX = it.toIntOrNull() ?: -320 }
-            config["dupeIPPanelY"]?.let { dupeIPPanelY = it.toIntOrNull() ?: 100 }
+            config["onlinePanelX"]?.let { onlinePanelX = it.toIntOrNull() ?: 320 }
+            config["onlinePanelY"]?.let { onlinePanelY = it.toIntOrNull() ?: 6 }
             
             config["hudEditMode"]?.let { hudEditMode = it.toBoolean() }
             
@@ -123,6 +127,9 @@ object ScsConfig {
             config["shaurmaBonusChance"]?.let { shaurmaBonusChance = it.toIntOrNull() ?: 15 }
             config["shaurmaBaseReward"]?.let { shaurmaBaseReward = it.toIntOrNull() ?: 1 }
             config["shaurmaChatMessages"]?.let { shaurmaChatMessages = it.toBoolean() }
+            
+            config["enableOnlineStatus"]?.let { enableOnlineStatus = it.toBoolean() }
+            config["onlineStatusUrl"]?.let { onlineStatusUrl = it }
             
             config["maxMessages"]?.let { maxMessages = it.toIntOrNull() ?: 50 }
             
@@ -158,12 +165,12 @@ object ScsConfig {
                 
                 appendLine("# Настройки видимости панелей")
                 appendLine("showMainPanel=$showMainPanel")
-                appendLine("showDupeIPPanel=$showDupeIPPanel")
+                appendLine("showOnlinePanel=$showOnlinePanel")
                 appendLine()
                 
                 appendLine("# Позиции панелей")
-                appendLine("dupeIPPanelX=$dupeIPPanelX")
-                appendLine("dupeIPPanelY=$dupeIPPanelY")
+                appendLine("onlinePanelX=$onlinePanelX")
+                appendLine("onlinePanelY=$onlinePanelY")
                 appendLine()
                 
                 appendLine("# Режим редактирования HUD")
@@ -198,6 +205,11 @@ object ScsConfig {
                 appendLine("shaurmaBonusChance=$shaurmaBonusChance")
                 appendLine("shaurmaBaseReward=$shaurmaBaseReward")
                 appendLine("shaurmaChatMessages=$shaurmaChatMessages")
+                appendLine()
+                
+                appendLine("# Онлайн статус")
+                appendLine("enableOnlineStatus=$enableOnlineStatus")
+                appendLine("onlineStatusUrl=$onlineStatusUrl")
                 appendLine()
                 
                 appendLine("# Расширенные")

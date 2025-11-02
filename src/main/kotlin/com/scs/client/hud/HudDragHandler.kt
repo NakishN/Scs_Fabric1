@@ -42,24 +42,6 @@ object HudDragHandler {
             }
         }
         
-        // Проверяем клик по DupeIP панели
-        if (ScsConfig.showDupeIPPanel) {
-            val x = if (ScsConfig.dupeIPPanelX < 0) screenWidth + ScsConfig.dupeIPPanelX else ScsConfig.dupeIPPanelX
-            val y = if (ScsConfig.dupeIPPanelY < 0) screenHeight + ScsConfig.dupeIPPanelY else ScsConfig.dupeIPPanelY
-            
-            val panelWidth = 250
-            val panelHeight = 40
-            
-            if (mouseX.toInt() in x..(x + panelWidth) && mouseY.toInt() in y..(y + panelHeight)) {
-                draggingPanel = "dupeip"
-                dragStartX = mouseX.toInt()
-                dragStartY = mouseY.toInt()
-                panelStartX = ScsConfig.dupeIPPanelX
-                panelStartY = ScsConfig.dupeIPPanelY
-                return true
-            }
-        }
-        
         return false
     }
     
@@ -89,20 +71,6 @@ object HudDragHandler {
                 
                 ScsConfig.hudX = newX.coerceIn(-screenWidth + 200, screenWidth - 200)
                 ScsConfig.hudY = newY.coerceIn(-screenHeight + 100, screenHeight - 100)
-            }
-            "dupeip" -> {
-                var newX = panelStartX + deltaX
-                var newY = panelStartY + deltaY
-                
-                if (newX > screenWidth / 2) {
-                    newX = newX - screenWidth
-                }
-                if (newY > screenHeight / 2) {
-                    newY = newY - screenHeight
-                }
-                
-                ScsConfig.dupeIPPanelX = newX.coerceIn(-screenWidth + 250, screenWidth - 250)
-                ScsConfig.dupeIPPanelY = newY.coerceIn(-screenHeight + 50, screenHeight - 50)
             }
         }
         

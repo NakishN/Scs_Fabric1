@@ -52,6 +52,9 @@ dependencies {
     // Fabric API - using correct group ID
     modImplementation("net.fabricmc.fabric-api:fabric-api:${project.property("fabric_api_version")}")
 
+    // HTTP клиент для онлайн статуса (Java 11+ встроенный)
+    // Используем стандартную библиотеку Java, которая уже есть в Minecraft
+
 }
 
 tasks.processResources {
