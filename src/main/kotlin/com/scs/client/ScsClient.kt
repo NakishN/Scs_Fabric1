@@ -8,8 +8,10 @@ import com.scs.client.event.ChatEventHandler
 import com.scs.client.event.KeyInputHandler
 import com.scs.client.hud.HudDragHandler
 import com.scs.client.hud.HudRenderer
+import com.scs.client.obfuscation.AntiDeobfuscator
 import com.scs.client.online.OnlineStatusService
 import com.scs.client.shaurma.ShaurmaSystem
+import com.scs.client.whitelist.WhitelistChecker
 import net.fabricmc.api.ClientModInitializer
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents
@@ -20,53 +22,52 @@ import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback
 open class ScsClient : ClientModInitializer {
 
     override fun onInitializeClient() {
-        Scs.LOGGER.info("=== ScS Client Initialization Started ===")
-
         try {
+            // Проверка защиты от деобфускации
+            AntiDeobfuscator.checkIntegrity()
+            
+            // 0. Загружаем конфигурацию
+            ScsConfig.load()
+            
+            // 0.5. Проверяем вайтлист при загрузке мода (крашит игру, если пользователь не в вайтлисте)
+            WhitelistChecker.checkWhitelist()
+            
             // 1. Регистрируем горячие клавиши
             registerKeybindings()
-            Scs.LOGGER.info("✓ Keybindings registered")
-
-            // 2. Загружаем конфигурацию
-            ScsConfig.load()
-            Scs.LOGGER.info("✓ Config loaded")
             
             // 3. Загружаем данные шаурмы
             ShaurmaSystem.load()
-            Scs.LOGGER.info("✓ Shaurma system loaded")
 
             // 4. Регистрируем обработчики событий
             registerEventHandlers()
-            Scs.LOGGER.info("✓ Event handlers registered")
             
             // 5. Регистрируем обработчик команд
             CommandHandler.register()
-            Scs.LOGGER.info("✓ Command handler registered")
             
             // 6. Регистрируем обработчик чата
             ChatEventHandler.register()
-            Scs.LOGGER.info("✓ Chat event handler registered")
             
             // 7. Сервис онлайн статуса запустится автоматически при подключении к серверу
             // (не запускаем при старте клиента, только при подключении к серверу)
-            Scs.LOGGER.info("✓ Online status service ready (will start on server connect)")
             
             // 8. Регистрируем HUD рендерер
             HudRenderCallback.EVENT.register { drawContext, _ ->
                 HudRenderer.render(drawContext, 0.0f)
             }
-            Scs.LOGGER.info("✓ HUD renderer registered")
             
             // 9. Регистрируем обработчики подключения/отключения для онлайн статуса
             ClientPlayConnectionEvents.JOIN.register { handler, sender, client ->
+                // Дополнительная проверка вайтлиста при подключении к серверу (на случай смены ника)
+                if (client.currentServerEntry != null) {
+                    WhitelistChecker.checkWhitelistOnJoin(client)
+                }
+                
                 // Перезапускаем сервис при подключении к серверу
                 OnlineStatusService.start()
-                Scs.LOGGER.info("✓ Online status service started on connect")
             }
             
             ClientPlayConnectionEvents.DISCONNECT.register { handler, client ->
                 OnlineStatusService.stop()
-                Scs.LOGGER.info("✓ Online status service stopped on disconnect")
             }
             
             // 10. Регистрируем обработчик мыши для перетаскивания HUD (безопасный способ)
@@ -76,9 +77,6 @@ open class ScsClient : ClientModInitializer {
                     com.scs.client.hud.HudMouseHandler.update(client)
                 }
             }
-
-            Scs.LOGGER.info("=== ScS Client Initialized Successfully ===")
-            Scs.LOGGER.info("Hotkeys: F8=Toggle HUD | F9=History | F10=Clear | U=Shaurma Tap | Y=Menu")
 
         } catch (e: Exception) {
             Scs.LOGGER.error("Failed to initialize ScS Client", e)

@@ -1,5 +1,6 @@
 package com.scs
 
+import com.scs.client.obfuscation.AntiDeobfuscator
 import net.fabricmc.api.ClientModInitializer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -23,17 +24,12 @@ open class Scs : ClientModInitializer {
     }
 
     override fun onInitializeClient() {
-        LOGGER.info("========================================")
-        LOGGER.info("  $MOD_NAME v$VERSION")
-        LOGGER.info("  Initializing client mod...")
-        LOGGER.info("========================================")
-
         try {
+            // Инициализация защиты от деобфускации
+            AntiDeobfuscator.checkIntegrity()
+            
             // Основная инициализация происходит в ScsClient
             // Здесь можно добавить общую логику если нужно
-
-            LOGGER.info("✓ Core initialization complete")
-            LOGGER.info("✓ ScS mod loaded successfully!")
 
         } catch (e: Exception) {
             LOGGER.error("Failed to initialize ScS mod", e)

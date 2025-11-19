@@ -61,13 +61,6 @@ object ShaurmaSystem {
                 playBonusSound()
             }
 
-            Scs.LOGGER.info(
-                "[ScS] Shaurma BONUS: +{}x{} = {} (total: {})",
-                ScsConfig.shaurmaBaseReward,
-                bonusMultipliers[bonusIndex],
-                reward,
-                shaurmaCount + reward
-            )
         } else {
             // Обычная шаурма
             message = tapMessages[Random.nextInt(tapMessages.size)]
@@ -88,9 +81,6 @@ object ShaurmaSystem {
         // Сохраняем каждые 10 тапов
         if (totalTaps % 10 == 0L) {
             save()
-            if (totalTaps % 50 == 0L) {
-                Scs.LOGGER.info("[ScS] Shaurma milestone: $totalTaps taps, $shaurmaCount shaurma total")
-            }
         }
     }
 
@@ -211,13 +201,11 @@ object ShaurmaSystem {
                         unlockedAchievements.addAll(parts[3].split(",").filter { it.isNotEmpty() })
                     }
 
-                    Scs.LOGGER.info("[ScS] Loaded shaurma data: $shaurmaCount shaurma, $totalTaps taps, ${unlockedAchievements.size} achievements")
                     
                     // Проверяем достижения после загрузки (без уведомлений)
                     checkAchievementsSilent()
                 }
             } else {
-                Scs.LOGGER.info("[ScS] Starting fresh shaurma session!")
             }
         } catch (e: Exception) {
             Scs.LOGGER.error("[ScS] Failed to load shaurma data, starting fresh", e)
@@ -371,7 +359,6 @@ object ShaurmaSystem {
             }
         }
         
-        Scs.LOGGER.info("[ScS] Achievement unlocked: ${achievement.name} (${achievement.id})")
     }
 
     fun resetData() {
@@ -382,7 +369,6 @@ object ShaurmaSystem {
         totalTaps = 0
         save()
 
-        Scs.LOGGER.info("[ScS] Shaurma data reset: was $oldShaurma shaurma, $oldTaps taps")
 
         val client = MinecraftClient.getInstance()
         client.player?.sendMessage(

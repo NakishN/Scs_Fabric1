@@ -32,7 +32,6 @@ object CommandScheduler {
         val cleanCommand = command.removePrefix("/")
         
         commandQueue.offer(ScheduledCommand(cleanCommand))
-        Scs.LOGGER.debug("[ScS] Command scheduled: $cleanCommand (queue size: ${commandQueue.size})")
     }
     
     /**
@@ -40,7 +39,6 @@ object CommandScheduler {
      */
     fun scheduleCommands(commands: List<String>) {
         commands.forEach { scheduleCommand(it) }
-        Scs.LOGGER.info("[ScS] Scheduled ${commands.size} commands (total queue: ${commandQueue.size})")
     }
     
     /**
@@ -77,7 +75,6 @@ object CommandScheduler {
             }
             
             val fullCommand = if (command.startsWith("/")) command else "/$command"
-            Scs.LOGGER.info("[ScS] Executing command: $fullCommand")
             
             // В Fabric используем sendChatCommand для отправки команды
             networkHandler.sendChatCommand(fullCommand)
@@ -109,17 +106,14 @@ object CommandScheduler {
         } else {
             commandDelay = delayMs
         }
-        Scs.LOGGER.info("[ScS] Command delay set to ${commandDelay}ms")
     }
     
     /**
      * Очищает очередь команд
      */
     fun clearQueue() {
-        val size = commandQueue.size
         commandQueue.clear()
         lastCommandTime = 0L
-        Scs.LOGGER.info("[ScS] Command queue cleared ($size commands removed)")
     }
     
     /**

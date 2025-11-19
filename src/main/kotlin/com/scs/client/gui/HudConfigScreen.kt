@@ -22,10 +22,13 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
     private var tempMainPanelY = ScsConfig.hudY
     private var tempOnlinePanelX = ScsConfig.onlinePanelX
     private var tempOnlinePanelY = ScsConfig.onlinePanelY
+    private var tempViolationsPanelX = ScsConfig.violationsPanelX
+    private var tempViolationsPanelY = ScsConfig.violationsPanelY
     
     // Чекбоксы для включения/выключения панелей
     private lateinit var showMainPanelCheckbox: CheckboxWidget
     private lateinit var showOnlinePanelCheckbox: CheckboxWidget
+    private lateinit var showViolationsPanelCheckbox: CheckboxWidget
     
     override fun init() {
         super.init()
@@ -196,6 +199,19 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
                     return true
                 }
             }
+            
+            // Проверяем клик по панели нарушений
+            if (ScsConfig.showViolationsPanel && ScsConfig.enableOnlineStatus) {
+                val x = if (tempViolationsPanelX < 0) screenWidth + tempViolationsPanelX else tempViolationsPanelX
+                val y = if (tempViolationsPanelY < 0) screenHeight + tempViolationsPanelY else tempViolationsPanelY
+                
+                if (mouseX.toInt() in x..(x + 280) && mouseY.toInt() in y..(y + 200)) {
+                    draggingPanel = "violations"
+                    dragOffsetX = mouseX.toInt() - x
+                    dragOffsetY = mouseY.toInt() - y
+                    return true
+                }
+            }
         }
         
         return super.mouseClicked(mouseX, mouseY, button)
@@ -237,6 +253,21 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
                     
                     tempOnlinePanelX = newX.coerceIn(-screenWidth + 260, screenWidth - 260)
                     tempOnlinePanelY = newY.coerceIn(-screenHeight + 160, screenHeight - 160)
+                }
+                "violations" -> {
+                    var newX = mouseX.toInt() - dragOffsetX
+                    var newY = mouseY.toInt() - dragOffsetY
+                    
+                    // Преобразуем абсолютные координаты в относительные
+                    if (newX > screenWidth / 2) {
+                        newX = newX - screenWidth
+                    }
+                    if (newY > screenHeight / 2) {
+                        newY = newY - screenHeight
+                    }
+                    
+                    tempViolationsPanelX = newX.coerceIn(-screenWidth + 290, screenWidth - 290)
+                    tempViolationsPanelY = newY.coerceIn(-screenHeight + 210, screenHeight - 210)
                 }
             }
             return true
@@ -294,6 +325,24 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
                 0xFFFFFF
             )
         }
+        
+        // Панель нарушений (превью)
+        if (ScsConfig.showViolationsPanel && ScsConfig.enableOnlineStatus) {
+            val x = if (tempViolationsPanelX < 0) screenWidth + tempViolationsPanelX else tempViolationsPanelX
+            val y = if (tempViolationsPanelY < 0) screenHeight + tempViolationsPanelY else tempViolationsPanelY
+            
+            val isHovering = mouseX in x..(x + 280) && mouseY in y..(y + 200)
+            val bgColor = if (isHovering) 0xAAFF0000.toInt() else 0xAA000000.toInt()
+            
+            context.fill(x - 2, y - 2, x + 280, y + 200, bgColor)
+            context.drawTextWithShadow(
+                textRenderer,
+                Text.literal("Панель нарушений").formatted(Formatting.RED),
+                x,
+                y,
+                0xFFFFFF
+            )
+        }
     }
     
     private fun moveMainPanel(dx: Int, dy: Int) {
@@ -320,6 +369,8 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
         tempMainPanelY = 6
         tempOnlinePanelX = 320
         tempOnlinePanelY = 6
+        tempViolationsPanelX = -320
+        tempViolationsPanelY = 6
     }
     
     private fun saveAndClose() {
@@ -328,6 +379,8 @@ class HudConfigScreen(parent: Screen?) : Screen(Text.literal("Настройки
         // Сохраняем независимые координаты онлайн панели
         ScsConfig.onlinePanelX = tempOnlinePanelX
         ScsConfig.onlinePanelY = tempOnlinePanelY
+        ScsConfig.violationsPanelX = tempViolationsPanelX
+        ScsConfig.violationsPanelY = tempViolationsPanelY
         
         // Сохраняем конфигурацию в файл
         ScsConfig.save()

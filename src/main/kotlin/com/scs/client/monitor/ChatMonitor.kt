@@ -37,33 +37,53 @@ object ChatMonitor {
     // Паттерны для системных сообщений [System] [CHAT]
     // Учитываем возможные временные метки в любом формате после [System] [CHAT]
     private val checkPatterns = listOf(
-        Regex("""\[System\]\s*\[CHAT\].*[►▶]\s*Проверка.*успешно.*начата.*""", RegexOption.IGNORE_CASE),
-        Regex("""\[System\]\s*\[CHAT\].*Проверка.*успешно.*начата.*""", RegexOption.IGNORE_CASE)
+        // Формат: [System] [CHAT] [15:38:11] ▶ Проверка успешно начата!
+        // Очень гибкий паттерн - ищем любые символы между [CHAT] и "Проверка"
+        Regex("""\[System\].*?\[CHAT\].*?Проверка.*?успешно.*?начата""", RegexOption.IGNORE_CASE),
+        // Альтернативный - с символом стрелки
+        Regex("""\[System\].*?\[CHAT\].*?[►▶].*?Проверка.*?успешно.*?начата""", RegexOption.IGNORE_CASE),
+        // Еще более простой - просто ищем ключевые слова
+        Regex("""Проверка.*?успешно.*?начата""", RegexOption.IGNORE_CASE)
     )
 
     private val playerPatterns = listOf(
-        // Формат: [System] [CHAT] [ЧЧ:ММ:СС]    Проверяемый игрок: PlayerName
-        Regex("""\[System\]\s*\[CHAT\].*Проверяемый\s+игрок\s*[:：]\s*([a-zA-Z0-9_]+).*""", RegexOption.IGNORE_CASE),
-        Regex("""\[System\]\s*\[CHAT\].*игрок\s*[:：]\s*([a-zA-Z0-9_]+).*""", RegexOption.IGNORE_CASE)
+        // Формат: [System] [CHAT] [15:38:11]    Проверяемый игрок: yaneloh2026
+        // Очень гибкий паттерн - ищем любые символы между [CHAT] и "Проверяемый"
+        Regex("""\[System\].*?\[CHAT\].*?Проверяемый\s+игрок\s*[:：]\s*([a-zA-Z0-9_]+)""", RegexOption.IGNORE_CASE),
+        // Альтернативный формат без слова "Проверяемый"
+        Regex("""\[System\].*?\[CHAT\].*?игрок\s*[:：]\s*([a-zA-Z0-9_]+)""", RegexOption.IGNORE_CASE),
+        // Еще более простой - просто ищем "игрок:" и имя после него
+        Regex("""игрок\s*[:：]\s*([a-zA-Z0-9_]+)""", RegexOption.IGNORE_CASE)
     )
 
     private val modePatterns = listOf(
-        // Формат: [System] [CHAT] [ЧЧ:ММ:СС]    Вы находитесь на режиме: Mode
-        Regex("""\[System\]\s*\[CHAT\].*Вы\s+находитесь\s+на\s+режиме\s*[:：]\s*(.+?)(?:\s*$|\.)""", RegexOption.IGNORE_CASE),
-        Regex("""\[System\]\s*\[CHAT\].*режим\s*[:：]\s*(.+?)(?:\s*$|\.)""", RegexOption.IGNORE_CASE)
+        // Формат: [System] [CHAT] [15:38:11]    Вы находитесь на режиме: КланЛайт #1
+        // Очень гибкий паттерн - захватываем все после двоеточия до конца строки
+        Regex("""\[System\].*?\[CHAT\].*?Вы\s+находитесь\s+на\s+режиме\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Альтернативный формат
+        Regex("""\[System\].*?\[CHAT\].*?режим\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Еще более простой
+        Regex("""на\s+режиме\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE)
     )
 
     // Паттерны для системного чата [System] [CHAT]
     // Учитываем возможные временные метки в любом формате после [System] [CHAT]
     private val systemChatPatterns = listOf(
-        // Формат: [System] [CHAT] [ЧЧ:ММ:СС] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» PlayerName » message
-        Regex("""\[System\]\s*\[CHAT\].*ᴄ\s*\|\s*«ᴄʜᴇᴀᴛᴇʀ»\s*([a-zA-Z0-9_]+)\s*»\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Формат: [System] [CHAT] [15:39:20] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» yaneloh2026 » 120732
+        // Очень гибкий паттерн - ищем любые символы между [CHAT] и именем игрока
+        // Используем .*? для нежадного поиска
+        Regex("""\[System\].*?\[CHAT\].*?[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Формат: [System] [CHAT] [15:39:20] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» yaneloh2026 » окей (без пробела перед »)
+        Regex("""\[System\].*?\[CHAT\].*?[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"'](.+)""", RegexOption.IGNORE_CASE),
         // Формат: [System] [CHAT] [ЧЧ:ММ:СС] ʟ | «sᴜᴘᴇʀᴠɪsᴏʀ» PlayerName » message
-        Regex("""\[System\]\s*\[CHAT\].*ʟ\s*\|\s*«sᴜᴘᴇʀᴠɪsᴏʀ»\s*([a-zA-Z0-9_]+)\s+.*?»\s*(.+)""", RegexOption.IGNORE_CASE),
+        Regex("""\[System\].*?\[CHAT\].*?[ʟl]\s*\|\s*.*?sᴜᴘᴇʀᴠɪsᴏʀ.*?\s*([a-zA-Z0-9_]+)\s+.*?[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
         // Формат: [System] [CHAT] [ЧЧ:ММ:СС] PlayerName: message (обычный чат)
-        Regex("""\[System\]\s*\[CHAT\].*([a-zA-Z0-9_]+)\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Общий формат для чата игроков
-        Regex("""\[System\]\s*\[CHAT\].*[«»]\s*([a-zA-Z0-9_]+)\s*[»]\s*(.+)""", RegexOption.IGNORE_CASE)
+        Regex("""\[System\].*?\[CHAT\].*?([a-zA-Z0-9_]+)\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Общий формат для чата игроков с кавычками
+        Regex("""\[System\].*?\[CHAT\].*?[«"'"']\s*([a-zA-Z0-9_]+)\s*[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
+        // Упрощенный паттерн для чата с cheater - без требования [System] [CHAT]
+        Regex("""[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
+        Regex("""[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"'](.+)""", RegexOption.IGNORE_CASE)
     )
 
 
@@ -77,10 +97,6 @@ object ChatMonitor {
             logMessage(source, cleanText)
         }
 
-        // Логируем для отладки системных сообщений
-        if (text.contains("[System]") && text.contains("[CHAT]")) {
-            Scs.LOGGER.debug("[ScS] Processing System CHAT message: $text")
-        }
 
         // Проверяем сообщение
         checkMessage(text, source)
@@ -92,17 +108,18 @@ object ChatMonitor {
     private fun checkMessage(text: String, source: String) {
         if (text.isBlank()) return
 
+
         // Проверка на проверки
-        for (pattern in checkPatterns) {
-            if (pattern.find(text) != null) {
+        for ((index, pattern) in checkPatterns.withIndex()) {
+            val match = pattern.find(text)
+            if (match != null) {
                 addEntry(Entry("CHECK", "Проверка начата"))
-                Scs.LOGGER.info("[ScS] CHECK detected in: $text")
                 return
             }
         }
 
         // Проверка на игрока
-        for (pattern in playerPatterns) {
+        for ((index, pattern) in playerPatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 2) {
                     val player = match.groupValues[1]
@@ -110,21 +127,19 @@ object ChatMonitor {
                         addEntry(Entry("CHECK", "Проверяемый: $player", player))
                         // Начинаем сессию проверки для этого игрока
                         com.scs.client.monitor.CheckSession.startCheck(player)
-                        Scs.LOGGER.info("[ScS] PLAYER detected: $player from: $text")
                         return
                     }
                 }
             }
         }
 
-        // Проверка на режим
-        for (pattern in modePatterns) {
+        // Проверка на режим (только для отображения в HUD, не сохраняем)
+        for ((index, pattern) in modePatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 2) {
                     val mode = match.groupValues[1].trim()
                     if (mode.isNotEmpty()) {
                         addEntry(Entry("CHECK", "Режим: $mode"))
-                        Scs.LOGGER.info("[ScS] MODE detected: $mode from: $text")
                         return
                     }
                 }
@@ -132,7 +147,7 @@ object ChatMonitor {
         }
 
         // Проверка на системный чат [System] [CHAT] - только чат игроков
-        for (pattern in systemChatPatterns) {
+        for ((index, pattern) in systemChatPatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 3) {
                     val player = match.groupValues[1]
@@ -143,6 +158,7 @@ object ChatMonitor {
                         playerChat.addFirst(chatEntry)
                         while (playerChat.size > 50) playerChat.removeLast()
 
+                        
                         if (ScsConfig.logAllChat) {
                             logMessage("CHAT", "$player: $message")
                         }
@@ -164,7 +180,6 @@ object ChatMonitor {
                 if (player != null && violation != null &&
                     isValidPlayerName(player) && violation.trim().length >= 3) {
                     processViolation(player.trim(), violation.trim(), type, count, source)
-                    Scs.LOGGER.info("[ScS] VIOLATION: $player - $violation")
                     return
                 }
             }
@@ -185,7 +200,6 @@ object ChatMonitor {
         com.scs.client.online.OnlineStatusService.sendViolation(entry)
 
         if (entry.isSerious) {
-            Scs.LOGGER.info("[ScS] SERIOUS VIOLATION: $player - $violation")
         }
     }
 
@@ -220,7 +234,6 @@ object ChatMonitor {
         violations.clear()
         playerChat.clear()
         processedMessages.clear()
-        Scs.LOGGER.info("[ScS] All entries cleared")
     }
 
     private fun isValidPlayerName(name: String): Boolean {

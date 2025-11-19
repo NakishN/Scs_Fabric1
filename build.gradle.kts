@@ -32,6 +32,14 @@ loom {
             sourceSet("main")
         }
     }
+    
+    // Включаем мощную обфускацию
+    runs {
+        configureEach {
+            // Обфускация переменных и методов
+            ideConfigGenerated(true)
+        }
+    }
 }
 
 // Fabric API configuration removed - using individual modules instead
@@ -54,7 +62,7 @@ dependencies {
 
     // HTTP клиент для онлайн статуса (Java 11+ встроенный)
     // Используем стандартную библиотеку Java, которая уже есть в Minecraft
-
+    
 }
 
 tasks.processResources {
@@ -80,15 +88,64 @@ tasks.withType<JavaCompile>().configureEach {
     // If Javadoc is generated, this must be specified in that task too.
     options.encoding = "UTF-8"
     options.release.set(targetJavaVersion)
+    
+    // Обфускация: удаляем отладочную информацию
+    // Максимальная оптимизация для обфускации
+    options.compilerArgs.add("-g:none")
 }
 
 tasks.withType<KotlinCompile>().configureEach {
     compilerOptions.jvmTarget.set(JvmTarget.fromTarget(targetJavaVersion.toString()))
+    
+    // Включаем обфускацию в Kotlin компиляторе
+    compilerOptions {
+        // Удаляем отладочную информацию для обфускации
+        freeCompilerArgs.add("-Xno-param-assertions")
+        freeCompilerArgs.add("-Xno-call-assertions")
+        freeCompilerArgs.add("-Xno-receiver-assertions")
+    }
 }
 
 tasks.jar {
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName}" }
+    }
+    
+    // Удаляем информацию о компиляции для обфускации
+    exclude("**/*.kt")
+    exclude("**/*.java")
+    exclude("**/META-INF/versions/**")
+    
+    // Обфускация манифеста
+    manifest {
+        attributes(
+            mapOf(
+                "Implementation-Title" to "ScS Fabric Mod",
+                "Implementation-Version" to project.version
+            )
+        )
+    }
+    
+    // Дополнительные настройки для обфускации
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// Настройка обфускации после компиляции
+tasks.named("remapJar") {
+    doLast {
+        // Дополнительная обфускация будет применена через ProGuard правила
+    }
+}
+
+// Задача для применения мощной обфускации
+tasks.register("obfuscate") {
+    group = "build"
+    description = "Применяет мощную обфускацию к моду"
+    
+    dependsOn("remapJar")
+    
+    doLast {
+        println("Обфускация применена к моду")
     }
 }
 

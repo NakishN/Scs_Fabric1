@@ -59,6 +59,21 @@ object HudRenderer {
             }
             renderOnlinePanel(drawContext, textRenderer, onlineX, onlineY)
         }
+        
+        // 3. Панель игроков с нарушениями (если включена)
+        if (ScsConfig.showViolationsPanel && ScsConfig.enableOnlineStatus) {
+            val violationsX = if (ScsConfig.violationsPanelX < 0) {
+                screenWidth + ScsConfig.violationsPanelX
+            } else {
+                ScsConfig.violationsPanelX
+            }
+            val violationsY = if (ScsConfig.violationsPanelY < 0) {
+                screenHeight + ScsConfig.violationsPanelY
+            } else {
+                ScsConfig.violationsPanelY
+            }
+            renderViolationsPanel(drawContext, textRenderer, violationsX, violationsY)
+        }
     }
     
     /**
@@ -251,6 +266,113 @@ object HudRenderer {
             }
             
             currentY += textRenderer.fontHeight + 2
+        }
+        
+        return panelHeight + 4
+    }
+    
+    /**
+     * Рендерит панель игроков с нарушениями
+     */
+    private fun renderViolationsPanel(
+        drawContext: DrawContext,
+        textRenderer: TextRenderer,
+        x: Int,
+        y: Int
+    ): Int {
+        val players = OnlineStatusService.playersWithViolations.toList()
+        
+        if (players.isEmpty()) {
+            // Показываем пустую панель с сообщением
+            val panelWidth = 250
+            val panelHeight = textRenderer.fontHeight + 4
+            
+            val bgColor = if (ScsConfig.hudEditMode) {
+                0x90FF0000.toInt() // Красный с прозрачностью в режиме редактирования
+            } else {
+                0x80000000.toInt() // Черный с прозрачностью
+            }
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
+            
+            if (ScsConfig.hudEditMode) {
+                val frameColor = 0xFFFFFFFF.toInt()
+                drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
+                drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
+                drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
+                drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
+                
+                val labelText = Text.literal("Панель нарушений")
+                    .formatted(Formatting.YELLOW, Formatting.BOLD)
+                drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
+            }
+            
+            val emptyText = Text.literal("🚨 Нарушения: 0")
+                .formatted(Formatting.RED)
+            drawContext.drawTextWithShadow(textRenderer, emptyText, x, y, 0xFFFFFF)
+            
+            return panelHeight + 4
+        }
+        
+        // Фоновая панель
+        val panelWidth = 280
+        var panelHeight = textRenderer.fontHeight + 4 // Заголовок
+        for (player in players) {
+            panelHeight += textRenderer.fontHeight + 2 // Имя игрока
+            if (player.violationTypes.isNotEmpty()) {
+                panelHeight += textRenderer.fontHeight + 1 // Типы нарушений
+            }
+        }
+        panelHeight += 4 // Отступы
+        
+        val bgColor = if (ScsConfig.hudEditMode) {
+            0x90FF0000.toInt() // Красный с прозрачностью в режиме редактирования
+        } else {
+            0x80000000.toInt() // Черный с прозрачностью
+        }
+        drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
+        
+        // В режиме редактирования рисуем рамку для перетаскивания
+        if (ScsConfig.hudEditMode) {
+            val frameColor = 0xFFFFFFFF.toInt() // Белая рамка
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor) // Верхняя
+            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor) // Нижняя
+            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor) // Левая
+            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor) // Правая
+            
+            // Подпись "Панель нарушений" в режиме редактирования
+            val labelText = Text.literal("Панель нарушений")
+                .formatted(Formatting.YELLOW, Formatting.BOLD)
+            drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
+        }
+        
+        // Заголовок
+        val headerText = Text.literal("🚨 Нарушения: ${players.size}")
+            .formatted(Formatting.RED, Formatting.BOLD)
+        drawContext.drawTextWithShadow(textRenderer, headerText, x, y, 0xFFFFFF)
+        
+        // Рисуем список игроков
+        var currentY = y + textRenderer.fontHeight + 4
+        for (player in players.take(10)) { // Показываем максимум 10 игроков
+            val playerText = Text.literal("  • ${player.playerName} (${player.violationCount})")
+                .formatted(Formatting.WHITE)
+            drawContext.drawTextWithShadow(textRenderer, playerText, x, currentY, 0xFFFFFF)
+            currentY += textRenderer.fontHeight + 2
+            
+            // Показываем типы нарушений
+            if (player.violationTypes.isNotEmpty()) {
+                val typesText = player.violationTypes.take(3).joinToString(", ") // Показываем максимум 3 типа
+                val typesDisplay = if (player.violationTypes.size > 3) {
+                    "$typesText +${player.violationTypes.size - 3}"
+                } else {
+                    typesText
+                }
+                val violationTypesText = Text.literal("    → $typesDisplay")
+                    .formatted(Formatting.YELLOW)
+                drawContext.drawTextWithShadow(textRenderer, violationTypesText, x, currentY, 0xFFFFFF)
+                currentY += textRenderer.fontHeight + 1
+            }
+            
+            currentY += 1
         }
         
         return panelHeight + 4

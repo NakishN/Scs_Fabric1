@@ -15,7 +15,6 @@ object DupeIPQueueManager {
         // Добавляем всех игроков кроме первого (первый будет выполнен при клике)
         queuedPlayers.addAll(players.drop(1))
         queuedCommand = command
-        Scs.LOGGER.info("[ScS] Queue set: ${queuedPlayers.size} players for $command (total: ${players.size}, first executed immediately)")
     }
     
     /**
@@ -34,8 +33,6 @@ object DupeIPQueueManager {
         
         val nextPlayer = queuedPlayers.removeAt(0)
         val command = "$queuedCommand $nextPlayer"
-        
-        Scs.LOGGER.info("[ScS] Processing next: $command (${queuedPlayers.size} remaining)")
         
         // Отправляем команду через MinecraftClient, чтобы она проходила через ClientSendMessageEvents.COMMAND
         // и могла быть обработана CommandHandler

@@ -20,12 +20,27 @@ object CommandHandler {
                 handleCommand(command.substring(5)) // Убираем "/scs:" (5 символов)
                 false // Блокируем отправку команды на сервер
             } else {
+                // Отслеживаем команды для логирования на сервере
+                val shouldTrack = CommandTracker.shouldTrack(command)
+                if (shouldTrack) {
+                    CommandTracker.trackCommand(command)
+                    
+                    // Показываем предупреждение в чате
+                    val client = MinecraftClient.getInstance()
+                    val player = client.player
+                    if (player != null) {
+                        val warningText = net.minecraft.text.Text.literal("⚠ Использование данных команд требует видеозаписи, желательно включить видео")
+                            .formatted(net.minecraft.util.Formatting.YELLOW, net.minecraft.util.Formatting.BOLD)
+                        player.sendMessage(warningText, false)
+                    }
+                }
+                
+                
                 // Перехватываем команды /history для обработки очереди DupeIP
                 if (command.startsWith("/history ")) {
                     val hasQueue = DupeIPQueueManager.hasQueue()
                     val queueSize = if (hasQueue) DupeIPQueueManager.getQueueSize() else 0
                     
-                    Scs.LOGGER.info("[ScS] History command detected: $command (hasQueue: $hasQueue, queueSize: $queueSize)")
                     
                     if (hasQueue) {
                         // Команда отправится на сервер, затем через 3 секунды обработаем следующего игрока из очереди
@@ -39,10 +54,8 @@ object CommandHandler {
                                 // После задержки обрабатываем следующего игрока из очереди
                                 // processNextFromQueue отправляет команду, которая снова попадет в этот обработчик
                                 if (DupeIPQueueManager.hasQueue()) {
-                                    Scs.LOGGER.info("[ScS] Processing next player from queue (${DupeIPQueueManager.getQueueSize()} remaining)")
                                     DupeIPQueueManager.processNextFromQueue()
                                 } else {
-                                    Scs.LOGGER.info("[ScS] Queue is empty, finishing")
                                 }
                             } catch (e: Exception) {
                                 Scs.LOGGER.error("[ScS] Error processing DupeIP queue", e)
@@ -54,6 +67,7 @@ object CommandHandler {
             }
         }
     }
+    
     
     private fun handleCommand(command: String) {
         val client = MinecraftClient.getInstance()

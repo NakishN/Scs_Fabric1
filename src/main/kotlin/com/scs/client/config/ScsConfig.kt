@@ -19,10 +19,13 @@ object ScsConfig {
     // Настройки видимости панелей
     var showMainPanel = true      // Основная панель (нарушения, проверки)
     var showOnlinePanel = true    // Панель онлайн игроков
+    var showViolationsPanel = true // Панель игроков с нарушениями
     
     // Позиции панелей (независимые координаты)
     var onlinePanelX = 320         // X координата онлайн панели
     var onlinePanelY = 6          // Y координата онлайн панели
+    var violationsPanelX = -320    // X координата панели нарушений
+    var violationsPanelY = 6      // Y координата панели нарушений
     
     // Режим редактирования HUD
     var hudEditMode = false       // Режим редактирования HUD (перетаскивание панелей)
@@ -74,7 +77,6 @@ object ScsConfig {
     fun load() {
         try {
             if (!configPath.exists()) {
-                Scs.LOGGER.info("[ScS] Config file not found, using defaults")
                 save() // Сохраняем дефолтные значения
                 return
             }
@@ -102,9 +104,12 @@ object ScsConfig {
             
             config["showMainPanel"]?.let { showMainPanel = it.toBoolean() }
             config["showOnlinePanel"]?.let { showOnlinePanel = it.toBoolean() }
+            config["showViolationsPanel"]?.let { showViolationsPanel = it.toBoolean() }
             
             config["onlinePanelX"]?.let { onlinePanelX = it.toIntOrNull() ?: 320 }
             config["onlinePanelY"]?.let { onlinePanelY = it.toIntOrNull() ?: 6 }
+            config["violationsPanelX"]?.let { violationsPanelX = it.toIntOrNull() ?: -320 }
+            config["violationsPanelY"]?.let { violationsPanelY = it.toIntOrNull() ?: 6 }
             
             config["hudEditMode"]?.let { hudEditMode = it.toBoolean() }
             
@@ -140,7 +145,6 @@ object ScsConfig {
                 }
             }
             
-            Scs.LOGGER.info("[ScS] Config loaded from file")
         } catch (e: Exception) {
             Scs.LOGGER.error("[ScS] Failed to load config", e)
         }
@@ -166,11 +170,14 @@ object ScsConfig {
                 appendLine("# Настройки видимости панелей")
                 appendLine("showMainPanel=$showMainPanel")
                 appendLine("showOnlinePanel=$showOnlinePanel")
+                appendLine("showViolationsPanel=$showViolationsPanel")
                 appendLine()
                 
                 appendLine("# Позиции панелей")
                 appendLine("onlinePanelX=$onlinePanelX")
                 appendLine("onlinePanelY=$onlinePanelY")
+                appendLine("violationsPanelX=$violationsPanelX")
+                appendLine("violationsPanelY=$violationsPanelY")
                 appendLine()
                 
                 appendLine("# Режим редактирования HUD")
@@ -218,7 +225,6 @@ object ScsConfig {
             }
             
             configPath.writeText(config)
-            Scs.LOGGER.info("[ScS] Config saved to file")
         } catch (e: Exception) {
             Scs.LOGGER.error("[ScS] Failed to save config", e)
         }

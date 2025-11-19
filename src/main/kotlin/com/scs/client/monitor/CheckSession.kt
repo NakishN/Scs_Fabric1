@@ -20,7 +20,6 @@ object CheckSession {
         currentPlayer = playerName
         checkStartTime = Instant.now()
         isActive = true
-        Scs.LOGGER.info("[ScS] Check session started for: $playerName")
     }
     
     /**
@@ -38,7 +37,6 @@ object CheckSession {
         currentPlayer = null
         checkStartTime = null
         
-        Scs.LOGGER.info("[ScS] Check session ended and chat cleared for: $player")
     }
     
     /**
@@ -49,7 +47,6 @@ object CheckSession {
         
         val duration = java.time.Duration.between(checkStartTime, Instant.now())
         if (duration.seconds >= checkTimeoutSeconds) {
-            Scs.LOGGER.info("[ScS] Check session timed out after ${duration.seconds} seconds")
             endCheck()
         }
     }
@@ -59,7 +56,6 @@ object CheckSession {
      */
     private fun clearPlayerChat(playerName: String) {
         ChatMonitor.playerChat.removeAll { it.playerName.equals(playerName, ignoreCase = true) }
-        Scs.LOGGER.info("[ScS] Cleared chat for player: $playerName")
     }
     
     /**
