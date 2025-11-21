@@ -32,7 +32,6 @@ open class Scs : ClientModInitializer {
             // Здесь можно добавить общую логику если нужно
 
         } catch (e: Exception) {
-            LOGGER.error("Failed to initialize ScS mod", e)
             throw RuntimeException("ScS mod initialization failed", e)
         }
     }

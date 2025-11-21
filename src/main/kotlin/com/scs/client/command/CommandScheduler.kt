@@ -70,7 +70,6 @@ object CommandScheduler {
             val networkHandler = client.networkHandler
             
             if (player == null || networkHandler == null) {
-                Scs.LOGGER.warn("[ScS] Cannot execute command: player or network handler is null")
                 return
             }
             
@@ -89,7 +88,7 @@ object CommandScheduler {
                 )
             }
         } catch (e: Exception) {
-            Scs.LOGGER.error("[ScS] Failed to execute command: /$command", e)
+            // Failed to execute command
         }
     }
     
@@ -98,10 +97,8 @@ object CommandScheduler {
      */
     fun setDelay(delayMs: Long) {
         if (delayMs < 100) {
-            Scs.LOGGER.warn("[ScS] Delay too small ($delayMs ms), setting to 100ms minimum")
             commandDelay = 100L
         } else if (delayMs > 10000) {
-            Scs.LOGGER.warn("[ScS] Delay too large ($delayMs ms), setting to 10000ms maximum")
             commandDelay = 10000L
         } else {
             commandDelay = delayMs

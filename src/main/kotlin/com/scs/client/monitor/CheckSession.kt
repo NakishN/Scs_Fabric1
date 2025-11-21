@@ -17,6 +17,15 @@ object CheckSession {
      * Начинает новую сессию проверки для игрока
      */
     fun startCheck(playerName: String) {
+        // Если была активная проверка для другого игрока, очищаем его чат и записи CHAT
+        if (isActive && currentPlayer != null && currentPlayer != playerName) {
+            clearPlayerChat(currentPlayer!!)
+            // Удаляем записи CHAT предыдущего игрока из entries
+            ChatMonitor.entries.removeAll { 
+                it.kind == "CHAT" && it.playerName?.equals(currentPlayer, ignoreCase = true) == true 
+            }
+        }
+        
         currentPlayer = playerName
         checkStartTime = Instant.now()
         isActive = true

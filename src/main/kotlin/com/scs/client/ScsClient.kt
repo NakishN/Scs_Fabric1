@@ -79,7 +79,6 @@ open class ScsClient : ClientModInitializer {
             }
 
         } catch (e: Exception) {
-            Scs.LOGGER.error("Failed to initialize ScS Client", e)
             throw e
         }
     }

@@ -52,7 +52,7 @@ object ChatEventHandler {
                     }
                 }
             } catch (e: Exception) {
-                com.scs.Scs.LOGGER.error("[ScS] Error processing chat message", e)
+                // Error processing chat message
             }
             message // Возвращаем исходное сообщение
         }

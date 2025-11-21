@@ -129,9 +129,7 @@ object ShaurmaSystem {
                 1.2f + Random.nextFloat() * 0.3f
             )
         } catch (e: Exception) {
-            if (totalTaps % 100 == 0L) {
-                Scs.LOGGER.warn("[ScS] Sound issues detected (logged every 100 taps)")
-            }
+            // Sound issues detected
         }
     }
 
@@ -178,7 +176,7 @@ object ShaurmaSystem {
             savePath.writeText(data)
             lastSaveTime = System.currentTimeMillis()
         } catch (e: Exception) {
-            Scs.LOGGER.error("[ScS] Failed to save shaurma data", e)
+            // Failed to save shaurma data
         }
     }
 
@@ -208,7 +206,6 @@ object ShaurmaSystem {
             } else {
             }
         } catch (e: Exception) {
-            Scs.LOGGER.error("[ScS] Failed to load shaurma data, starting fresh", e)
             shaurmaCount = 0
             totalTaps = 0
             unlockedAchievements.clear()

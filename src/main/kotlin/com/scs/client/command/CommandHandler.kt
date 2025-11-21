@@ -58,7 +58,7 @@ object CommandHandler {
                                 } else {
                                 }
                             } catch (e: Exception) {
-                                Scs.LOGGER.error("[ScS] Error processing DupeIP queue", e)
+                                // Error processing DupeIP queue
                             }
                         }.start()
                     }

@@ -18,14 +18,14 @@ object ScsConfig {
     
     // Настройки видимости панелей
     var showMainPanel = true      // Основная панель (нарушения, проверки)
-    var showOnlinePanel = true    // Панель онлайн игроков
-    var showViolationsPanel = true // Панель игроков с нарушениями
+    var showOnlinePanel = true    // Панель онлайн игроков (список)
+    var showServerOnlinePanel = true // Панель онлайна на сервере (количество)
     
     // Позиции панелей (независимые координаты)
     var onlinePanelX = 320         // X координата онлайн панели
     var onlinePanelY = 6          // Y координата онлайн панели
-    var violationsPanelX = -320    // X координата панели нарушений
-    var violationsPanelY = 6      // Y координата панели нарушений
+    var serverOnlinePanelX = -320    // X координата панели онлайна на сервере
+    var serverOnlinePanelY = 6      // Y координата панели онлайна на сервере
     
     // Режим редактирования HUD
     var hudEditMode = false       // Режим редактирования HUD (перетаскивание панелей)
@@ -104,12 +104,17 @@ object ScsConfig {
             
             config["showMainPanel"]?.let { showMainPanel = it.toBoolean() }
             config["showOnlinePanel"]?.let { showOnlinePanel = it.toBoolean() }
-            config["showViolationsPanel"]?.let { showViolationsPanel = it.toBoolean() }
+            config["showServerOnlinePanel"]?.let { showServerOnlinePanel = it.toBoolean() }
+            // Обратная совместимость со старым названием
+            config["showViolationsPanel"]?.let { showServerOnlinePanel = it.toBoolean() }
             
             config["onlinePanelX"]?.let { onlinePanelX = it.toIntOrNull() ?: 320 }
             config["onlinePanelY"]?.let { onlinePanelY = it.toIntOrNull() ?: 6 }
-            config["violationsPanelX"]?.let { violationsPanelX = it.toIntOrNull() ?: -320 }
-            config["violationsPanelY"]?.let { violationsPanelY = it.toIntOrNull() ?: 6 }
+            config["serverOnlinePanelX"]?.let { serverOnlinePanelX = it.toIntOrNull() ?: -320 }
+            config["serverOnlinePanelY"]?.let { serverOnlinePanelY = it.toIntOrNull() ?: 6 }
+            // Обратная совместимость со старым названием
+            config["violationsPanelX"]?.let { serverOnlinePanelX = it.toIntOrNull() ?: -320 }
+            config["violationsPanelY"]?.let { serverOnlinePanelY = it.toIntOrNull() ?: 6 }
             
             config["hudEditMode"]?.let { hudEditMode = it.toBoolean() }
             
@@ -146,7 +151,7 @@ object ScsConfig {
             }
             
         } catch (e: Exception) {
-            Scs.LOGGER.error("[ScS] Failed to load config", e)
+            // Failed to load config
         }
     }
     
@@ -170,14 +175,14 @@ object ScsConfig {
                 appendLine("# Настройки видимости панелей")
                 appendLine("showMainPanel=$showMainPanel")
                 appendLine("showOnlinePanel=$showOnlinePanel")
-                appendLine("showViolationsPanel=$showViolationsPanel")
+                appendLine("showServerOnlinePanel=$showServerOnlinePanel")
                 appendLine()
                 
                 appendLine("# Позиции панелей")
                 appendLine("onlinePanelX=$onlinePanelX")
                 appendLine("onlinePanelY=$onlinePanelY")
-                appendLine("violationsPanelX=$violationsPanelX")
-                appendLine("violationsPanelY=$violationsPanelY")
+                appendLine("serverOnlinePanelX=$serverOnlinePanelX")
+                appendLine("serverOnlinePanelY=$serverOnlinePanelY")
                 appendLine()
                 
                 appendLine("# Режим редактирования HUD")
@@ -226,7 +231,7 @@ object ScsConfig {
             
             configPath.writeText(config)
         } catch (e: Exception) {
-            Scs.LOGGER.error("[ScS] Failed to save config", e)
+            // Failed to save config
         }
     }
 }

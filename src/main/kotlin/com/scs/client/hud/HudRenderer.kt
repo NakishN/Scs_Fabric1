@@ -13,6 +13,11 @@ import java.time.Instant
 
 object HudRenderer {
     
+    // Кэш для списка онлайн игроков (обновляется не каждый кадр для снижения нагрузки)
+    private var cachedOnlinePlayers: List<OnlineStatusService.OnlinePlayer> = emptyList()
+    private var lastPlayersCacheUpdate: Long = 0
+    private val PLAYERS_CACHE_UPDATE_INTERVAL_MS = 1000L // Обновляем кэш раз в секунду
+    
     // Обработка кликов мыши для перетаскивания в режиме редактирования
     // Используется HudMouseHandler через миксин Screen или тик
     fun render(drawContext: DrawContext, tickDelta: Float) {
@@ -60,19 +65,19 @@ object HudRenderer {
             renderOnlinePanel(drawContext, textRenderer, onlineX, onlineY)
         }
         
-        // 3. Панель игроков с нарушениями (если включена)
-        if (ScsConfig.showViolationsPanel && ScsConfig.enableOnlineStatus) {
-            val violationsX = if (ScsConfig.violationsPanelX < 0) {
-                screenWidth + ScsConfig.violationsPanelX
+        // 3. Панель онлайна на сервере (если включена)
+        if (ScsConfig.showServerOnlinePanel && ScsConfig.enableOnlineStatus) {
+            val serverOnlineX = if (ScsConfig.serverOnlinePanelX < 0) {
+                screenWidth + ScsConfig.serverOnlinePanelX
             } else {
-                ScsConfig.violationsPanelX
+                ScsConfig.serverOnlinePanelX
             }
-            val violationsY = if (ScsConfig.violationsPanelY < 0) {
-                screenHeight + ScsConfig.violationsPanelY
+            val serverOnlineY = if (ScsConfig.serverOnlinePanelY < 0) {
+                screenHeight + ScsConfig.serverOnlinePanelY
             } else {
-                ScsConfig.violationsPanelY
+                ScsConfig.serverOnlinePanelY
             }
-            renderViolationsPanel(drawContext, textRenderer, violationsX, violationsY)
+            renderServerOnlinePanel(drawContext, textRenderer, serverOnlineX, serverOnlineY)
         }
     }
     
@@ -85,8 +90,22 @@ object HudRenderer {
         x: Int,
         y: Int
     ): Int {
+        // Получаем текущего проверяемого игрока
+        val currentCheckPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
+        
+        // Фильтруем записи: для CHAT показываем только чат текущего проверяемого игрока
+        val filteredEntries = ChatMonitor.entries.filter { entry ->
+            if (entry.kind == "CHAT") {
+                // Показываем чат только для текущего проверяемого игрока
+                currentCheckPlayer != null && entry.playerName?.equals(currentCheckPlayer, ignoreCase = true) == true
+            } else {
+                // Показываем все остальные записи
+                true
+            }
+        }
+        
         // Ограничиваем до 5 записей для HUD
-        val entries = ChatMonitor.entries.toList().take(5)
+        val entries = filteredEntries.take(5)
         
         if (entries.isEmpty()) return 0
 
@@ -179,7 +198,23 @@ object HudRenderer {
         x: Int,
         y: Int
     ): Int {
-        val players = OnlineStatusService.onlinePlayers.toList().take(10) // Показываем максимум 10 игроков
+        // Обновляем кэш списка игроков не каждый кадр, а раз в секунду для снижения нагрузки
+        val currentTime = System.currentTimeMillis()
+        val players = if (currentTime - lastPlayersCacheUpdate >= PLAYERS_CACHE_UPDATE_INTERVAL_MS) {
+            try {
+                // Безопасно копируем коллекцию, чтобы избежать NoSuchElementException при изменении во время итерации
+                val newCache = ArrayList(OnlineStatusService.onlinePlayers).take(10) // Показываем максимум 10 игроков
+                lastPlayersCacheUpdate = currentTime
+                cachedOnlinePlayers = newCache
+                newCache
+            } catch (e: Exception) {
+                // Если произошла ошибка, используем старый кэш или пустой список
+                if (cachedOnlinePlayers.isEmpty()) emptyList() else cachedOnlinePlayers
+            }
+        } else {
+            // Используем кэшированный список
+            cachedOnlinePlayers
+        }
         
         if (players.isEmpty()) {
             // Показываем пустую панель с сообщением
@@ -272,60 +307,22 @@ object HudRenderer {
     }
     
     /**
-     * Рендерит панель игроков с нарушениями
+     * Рендерит панель с количеством онлайн игроков на сервере
      */
-    private fun renderViolationsPanel(
+    private fun renderServerOnlinePanel(
         drawContext: DrawContext,
         textRenderer: TextRenderer,
         x: Int,
         y: Int
     ): Int {
-        val players = OnlineStatusService.playersWithViolations.toList()
-        
-        if (players.isEmpty()) {
-            // Показываем пустую панель с сообщением
-            val panelWidth = 250
-            val panelHeight = textRenderer.fontHeight + 4
-            
-            val bgColor = if (ScsConfig.hudEditMode) {
-                0x90FF0000.toInt() // Красный с прозрачностью в режиме редактирования
-            } else {
-                0x80000000.toInt() // Черный с прозрачностью
-            }
-            drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
-            
-            if (ScsConfig.hudEditMode) {
-                val frameColor = 0xFFFFFFFF.toInt()
-                drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
-                drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
-                drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
-                drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
-                
-                val labelText = Text.literal("Панель нарушений")
-                    .formatted(Formatting.YELLOW, Formatting.BOLD)
-                drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
-            }
-            
-            val emptyText = Text.literal("🚨 Нарушения: 0")
-                .formatted(Formatting.RED)
-            drawContext.drawTextWithShadow(textRenderer, emptyText, x, y, 0xFFFFFF)
-            
-            return panelHeight + 4
-        }
+        val count = OnlineStatusService.currentServerPlayerCount
         
         // Фоновая панель
-        val panelWidth = 280
-        var panelHeight = textRenderer.fontHeight + 4 // Заголовок
-        for (player in players) {
-            panelHeight += textRenderer.fontHeight + 2 // Имя игрока
-            if (player.violationTypes.isNotEmpty()) {
-                panelHeight += textRenderer.fontHeight + 1 // Типы нарушений
-            }
-        }
-        panelHeight += 4 // Отступы
+        val panelWidth = 200
+        val panelHeight = textRenderer.fontHeight + 4
         
         val bgColor = if (ScsConfig.hudEditMode) {
-            0x90FF0000.toInt() // Красный с прозрачностью в режиме редактирования
+            0x9000FF00.toInt() // Зеленый с прозрачностью в режиме редактирования
         } else {
             0x80000000.toInt() // Черный с прозрачностью
         }
@@ -339,41 +336,16 @@ object HudRenderer {
             drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor) // Левая
             drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor) // Правая
             
-            // Подпись "Панель нарушений" в режиме редактирования
-            val labelText = Text.literal("Панель нарушений")
+            // Подпись "Онлайн на сервере" в режиме редактирования
+            val labelText = Text.literal("Онлайн на сервере")
                 .formatted(Formatting.YELLOW, Formatting.BOLD)
             drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
         }
         
-        // Заголовок
-        val headerText = Text.literal("🚨 Нарушения: ${players.size}")
-            .formatted(Formatting.RED, Formatting.BOLD)
+        // Показываем только количество
+        val headerText = Text.literal("👥 Онлайн: $count")
+            .formatted(Formatting.GREEN, Formatting.BOLD)
         drawContext.drawTextWithShadow(textRenderer, headerText, x, y, 0xFFFFFF)
-        
-        // Рисуем список игроков
-        var currentY = y + textRenderer.fontHeight + 4
-        for (player in players.take(10)) { // Показываем максимум 10 игроков
-            val playerText = Text.literal("  • ${player.playerName} (${player.violationCount})")
-                .formatted(Formatting.WHITE)
-            drawContext.drawTextWithShadow(textRenderer, playerText, x, currentY, 0xFFFFFF)
-            currentY += textRenderer.fontHeight + 2
-            
-            // Показываем типы нарушений
-            if (player.violationTypes.isNotEmpty()) {
-                val typesText = player.violationTypes.take(3).joinToString(", ") // Показываем максимум 3 типа
-                val typesDisplay = if (player.violationTypes.size > 3) {
-                    "$typesText +${player.violationTypes.size - 3}"
-                } else {
-                    typesText
-                }
-                val violationTypesText = Text.literal("    → $typesDisplay")
-                    .formatted(Formatting.YELLOW)
-                drawContext.drawTextWithShadow(textRenderer, violationTypesText, x, currentY, 0xFFFFFF)
-                currentY += textRenderer.fontHeight + 1
-            }
-            
-            currentY += 1
-        }
         
         return panelHeight + 4
     }

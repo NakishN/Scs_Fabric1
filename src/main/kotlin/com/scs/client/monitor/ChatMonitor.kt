@@ -24,6 +24,8 @@ object ChatMonitor {
     val playerChat = ConcurrentLinkedDeque<PlayerChatEntry>()
 
     private val processedMessages = mutableSetOf<String>()
+    private var lastCheckedPlayer: String? = null
+    private var lastCheckPlayerTime: Instant? = null
 
     // Паттерны для поиска
     private val anticheatPatterns = listOf(
@@ -108,27 +110,49 @@ object ChatMonitor {
     private fun checkMessage(text: String, source: String) {
         if (text.isBlank()) return
 
-
-        // Проверка на проверки
-        for ((index, pattern) in checkPatterns.withIndex()) {
-            val match = pattern.find(text)
-            if (match != null) {
-                addEntry(Entry("CHECK", "Проверка начата"))
-                return
-            }
-        }
-
-        // Проверка на игрока
+        // Сначала проверяем на игрока (более специфичный паттерн)
+        // Это предотвратит дублирование, так как при нахождении игрока мы сразу начинаем проверку
+        var playerFound = false
         for ((index, pattern) in playerPatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 2) {
                     val player = match.groupValues[1]
                     if (isValidPlayerName(player)) {
-                        addEntry(Entry("CHECK", "Проверяемый: $player", player))
-                        // Начинаем сессию проверки для этого игрока
+                        // Проверяем, не дублируется ли запись о проверяемом игроке
+                        val now = Instant.now()
+                        val isDuplicate = lastCheckedPlayer?.equals(player, ignoreCase = true) == true &&
+                                lastCheckPlayerTime != null &&
+                                java.time.Duration.between(lastCheckPlayerTime, now).seconds < 2
+                        
+                        if (!isDuplicate) {
+                            // Очищаем чат предыдущего игрока, если была активная проверка
+                            val currentPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
+                            if (currentPlayer != null && currentPlayer != player) {
+                                // Очищаем чат предыдущего игрока
+                                playerChat.removeAll { it.playerName.equals(currentPlayer, ignoreCase = true) }
+                            }
+                            
+                            addEntry(Entry("CHECK", "Проверяемый: $player", player))
+                            lastCheckedPlayer = player
+                            lastCheckPlayerTime = now
+                        }
+                        
+                        // Начинаем сессию проверки для этого игрока (даже если запись не добавили из-за дублирования)
                         com.scs.client.monitor.CheckSession.startCheck(player)
+                        playerFound = true
                         return
                     }
+                }
+            }
+        }
+        
+        // Если игрок не найден, проверяем на начало проверки
+        if (!playerFound) {
+            for ((index, pattern) in checkPatterns.withIndex()) {
+                val match = pattern.find(text)
+                if (match != null) {
+                    addEntry(Entry("CHECK", "Проверка начата"))
+                    return
                 }
             }
         }
@@ -147,6 +171,7 @@ object ChatMonitor {
         }
 
         // Проверка на системный чат [System] [CHAT] - только чат игроков
+        // Сохраняем чат только для текущего проверяемого игрока
         for ((index, pattern) in systemChatPatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 3) {
@@ -154,13 +179,26 @@ object ChatMonitor {
                     val message = match.groupValues[2]
 
                     if (isValidPlayerName(player) && message.trim().isNotEmpty()) {
-                        val chatEntry = PlayerChatEntry(player.trim(), message.trim())
-                        playerChat.addFirst(chatEntry)
-                        while (playerChat.size > 50) playerChat.removeLast()
-
+                        val currentCheckPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
                         
-                        if (ScsConfig.logAllChat) {
-                            logMessage("CHAT", "$player: $message")
+                        // Сохраняем чат только если:
+                        // 1. Есть активная проверка И это чат проверяемого игрока
+                        // 2. ИЛИ нет активной проверки (сохраняем все чаты до начала проверки)
+                        if (currentCheckPlayer == null || player.equals(currentCheckPlayer, ignoreCase = true)) {
+                            val chatEntry = PlayerChatEntry(player.trim(), message.trim())
+                            playerChat.addFirst(chatEntry)
+                            
+                            // Ограничиваем размер списка чата
+                            while (playerChat.size > 50) playerChat.removeLast()
+                            
+                            // Если есть активная проверка для этого игрока, добавляем чат в entries для отображения в HUD
+                            if (currentCheckPlayer != null && player.equals(currentCheckPlayer, ignoreCase = true)) {
+                                addEntry(Entry("CHAT", chatEntry.text, player.trim()))
+                            }
+                            
+                            if (ScsConfig.logAllChat) {
+                                logMessage("CHAT", "$player: $message")
+                            }
                         }
                         return
                     }
@@ -234,6 +272,8 @@ object ChatMonitor {
         violations.clear()
         playerChat.clear()
         processedMessages.clear()
+        lastCheckedPlayer = null
+        lastCheckPlayerTime = null
     }
 
     private fun isValidPlayerName(name: String): Boolean {
