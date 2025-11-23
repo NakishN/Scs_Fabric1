@@ -11,7 +11,7 @@ object KeyBindings {
     lateinit var shaurmaTapKey: KeyBinding
     lateinit var shaurmaMenuKey: KeyBinding
     lateinit var hudConfigKey: KeyBinding
-    
+
     fun initialize() {
         toggleHudKey = KeyBinding(
             "key.scs.toggle_hud",

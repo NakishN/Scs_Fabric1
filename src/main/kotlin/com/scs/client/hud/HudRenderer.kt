@@ -12,14 +12,11 @@ import java.time.Duration
 import java.time.Instant
 
 object HudRenderer {
-    
-    // Кэш для списка онлайн игроков (обновляется не каждый кадр для снижения нагрузки)
+
     private var cachedOnlinePlayers: List<OnlineStatusService.OnlinePlayer> = emptyList()
     private var lastPlayersCacheUpdate: Long = 0
-    private val PLAYERS_CACHE_UPDATE_INTERVAL_MS = 1000L // Обновляем кэш раз в секунду
-    
-    // Обработка кликов мыши для перетаскивания в режиме редактирования
-    // Используется HudMouseHandler через миксин Screen или тик
+    private val PLAYERS_CACHE_UPDATE_INTERVAL_MS = 1000L
+
     fun render(drawContext: DrawContext, tickDelta: Float) {
         if (!ScsConfig.enableHud) return
 
@@ -42,16 +39,13 @@ object HudRenderer {
             ScsConfig.hudY
         }
 
-        // 1. Основная панель античита (если включена)
         var mainPanelHeight = 0
         if (ScsConfig.showMainPanel) {
             mainPanelHeight = renderMainPanel(drawContext, textRenderer, x, currentY)
             currentY += mainPanelHeight
         }
-        
-        // 2. Панель онлайн игроков (если включена)
+
         if (ScsConfig.showOnlinePanel && ScsConfig.enableOnlineStatus) {
-            // Используем независимые координаты для онлайн панели
             val onlineX = if (ScsConfig.onlinePanelX < 0) {
                 screenWidth + ScsConfig.onlinePanelX
             } else {
@@ -64,8 +58,7 @@ object HudRenderer {
             }
             renderOnlinePanel(drawContext, textRenderer, onlineX, onlineY)
         }
-        
-        // 3. Панель онлайна на сервере (если включена)
+
         if (ScsConfig.showServerOnlinePanel && ScsConfig.enableOnlineStatus) {
             val serverOnlineX = if (ScsConfig.serverOnlinePanelX < 0) {
                 screenWidth + ScsConfig.serverOnlinePanelX
@@ -80,71 +73,57 @@ object HudRenderer {
             renderServerOnlinePanel(drawContext, textRenderer, serverOnlineX, serverOnlineY)
         }
     }
-    
-    /**
-     * Рендерит основную панель античита (максимум 5 записей)
-     */
+
     private fun renderMainPanel(
         drawContext: DrawContext,
         textRenderer: TextRenderer,
         x: Int,
         y: Int
     ): Int {
-        // Получаем текущего проверяемого игрока
         val currentCheckPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
-        
-        // Фильтруем записи: для CHAT показываем только чат текущего проверяемого игрока
+
         val filteredEntries = ChatMonitor.entries.filter { entry ->
             if (entry.kind == "CHAT") {
-                // Показываем чат только для текущего проверяемого игрока
                 currentCheckPlayer != null && entry.playerName?.equals(currentCheckPlayer, ignoreCase = true) == true
             } else {
-                // Показываем все остальные записи
                 true
             }
         }
-        
-        // Ограничиваем до 5 записей для HUD
+
         val entries = filteredEntries.take(5)
-        
+
         if (entries.isEmpty()) return 0
 
-        // Фоновая панель
         val maxTextWidth = entries.maxOfOrNull { textRenderer.getWidth(getEntryText(it)) } ?: 100
         val panelWidth = maxTextWidth + 8
         val panelHeight = entries.size * (textRenderer.fontHeight + 2) + 4
 
-        // Рисуем полупрозрачный фон
-        // В режиме редактирования показываем рамку для перетаскивания
         val bgColor = if (ScsConfig.hudEditMode) {
-            0x900000FF.toInt() // Синий с прозрачностью в режиме редактирования
+            0x900000FF.toInt()
         } else {
-            0x80000000.toInt() // Черный с прозрачностью
+            0x80000000.toInt()
         }
         drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
-        
-        // В режиме редактирования рисуем рамку для перетаскивания
+
         if (ScsConfig.hudEditMode) {
-            val frameColor = 0xFFFFFFFF.toInt() // Белая рамка
-            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor) // Верхняя
-            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor) // Нижняя
-            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor) // Левая
-            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor) // Правая
-            
-            // Подпись "Основная панель" в режиме редактирования
+            val frameColor = 0xFFFFFFFF.toInt()
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
+            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
+            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
+            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
+
             val labelText = Text.literal("Основная панель")
                 .formatted(Formatting.YELLOW, Formatting.BOLD)
             drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
         }
 
-        // Рисуем записи
         var currentY = y
         for (entry in entries) {
             val entryText = getEntryText(entry)
             val color = getEntryColor(entry.kind)
-            
+
             drawContext.drawTextWithShadow(textRenderer, entryText, x, currentY, color)
-            
+
             currentY += textRenderer.fontHeight + 2
         }
 
@@ -166,7 +145,7 @@ object HudRenderer {
             "CHECK" -> parseColor(ScsConfig.checkColor)
             "VIOLATION" -> parseColor(ScsConfig.violationColor)
             "AC" -> parseColor(ScsConfig.acColor)
-            else -> 0xFFFFFF // Белый
+            else -> 0xFFFFFF
         }
     }
 
@@ -181,134 +160,116 @@ object HudRenderer {
     private fun formatTimeAgo(timestamp: Instant): String {
         val duration = Duration.between(timestamp, Instant.now())
         val seconds = duration.seconds
-        
+
         return when {
             seconds < 60 -> "${seconds}s"
             seconds < 3600 -> "${seconds / 60}m"
             else -> "${seconds / 3600}h"
         }
     }
-    
-    /**
-     * Рендерит панель онлайн игроков
-     */
+
     private fun renderOnlinePanel(
         drawContext: DrawContext,
         textRenderer: TextRenderer,
         x: Int,
         y: Int
     ): Int {
-        // Обновляем кэш списка игроков не каждый кадр, а раз в секунду для снижения нагрузки
         val currentTime = System.currentTimeMillis()
         val players = if (currentTime - lastPlayersCacheUpdate >= PLAYERS_CACHE_UPDATE_INTERVAL_MS) {
             try {
-                // Безопасно копируем коллекцию, чтобы избежать NoSuchElementException при изменении во время итерации
-                val newCache = ArrayList(OnlineStatusService.onlinePlayers).take(10) // Показываем максимум 10 игроков
+                val newCache = ArrayList(OnlineStatusService.onlinePlayers).take(10)
                 lastPlayersCacheUpdate = currentTime
                 cachedOnlinePlayers = newCache
                 newCache
             } catch (e: Exception) {
-                // Если произошла ошибка, используем старый кэш или пустой список
                 if (cachedOnlinePlayers.isEmpty()) emptyList() else cachedOnlinePlayers
             }
         } else {
-            // Используем кэшированный список
             cachedOnlinePlayers
         }
-        
+
         if (players.isEmpty()) {
-            // Показываем пустую панель с сообщением
             val panelWidth = 200
             val panelHeight = textRenderer.fontHeight + 4
-            
+
             val bgColor = if (ScsConfig.hudEditMode) {
-                0x9000FF00.toInt() // Зеленый с прозрачностью в режиме редактирования
+                0x9000FF00.toInt()
             } else {
-                0x80000000.toInt() // Черный с прозрачностью
+                0x80000000.toInt()
             }
             drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
-            
+
             if (ScsConfig.hudEditMode) {
                 val frameColor = 0xFFFFFFFF.toInt()
                 drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
                 drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
                 drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
                 drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
-                
+
                 val labelText = Text.literal("Онлайн панель")
                     .formatted(Formatting.YELLOW, Formatting.BOLD)
                 drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
             }
-            
+
             val emptyText = Text.literal("🟢 Онлайн: 0")
                 .formatted(Formatting.GREEN)
             drawContext.drawTextWithShadow(textRenderer, emptyText, x, y, 0xFFFFFF)
-            
+
             return panelHeight + 4
         }
-        
-        // Фоновая панель
+
         val panelWidth = 250
-        var panelHeight = textRenderer.fontHeight + 4 // Заголовок
-        // Высота зависит от количества игроков и наличия серверов
+        var panelHeight = textRenderer.fontHeight + 4
         for (player in players) {
-            panelHeight += textRenderer.fontHeight + 2 // Имя игрока
+            panelHeight += textRenderer.fontHeight + 2
             if (player.serverAddress != "unknown" && player.serverAddress != "singleplayer") {
-                panelHeight += textRenderer.fontHeight + 1 // Сервер
+                panelHeight += textRenderer.fontHeight + 1
             }
         }
-        panelHeight += 4 // Отступы
-        
+        panelHeight += 4
+
         val bgColor = if (ScsConfig.hudEditMode) {
-            0x9000FF00.toInt() // Зеленый с прозрачностью в режиме редактирования
+            0x9000FF00.toInt()
         } else {
-            0x80000000.toInt() // Черный с прозрачностью
+            0x80000000.toInt()
         }
         drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
-        
-        // В режиме редактирования рисуем рамку для перетаскивания
+
         if (ScsConfig.hudEditMode) {
-            val frameColor = 0xFFFFFFFF.toInt() // Белая рамка
-            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor) // Верхняя
-            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor) // Нижняя
-            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor) // Левая
-            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor) // Правая
-            
-            // Подпись "Онлайн панель" в режиме редактирования
+            val frameColor = 0xFFFFFFFF.toInt()
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
+            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
+            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
+            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
+
             val labelText = Text.literal("Онлайн панель")
                 .formatted(Formatting.YELLOW, Formatting.BOLD)
             drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
         }
-        
-        // Заголовок
+
         val headerText = Text.literal("🟢 Онлайн: ${players.size}")
             .formatted(Formatting.GREEN, Formatting.BOLD)
         drawContext.drawTextWithShadow(textRenderer, headerText, x, y, 0xFFFFFF)
-        
-        // Рисуем список игроков
+
         var currentY = y + textRenderer.fontHeight + 4
         for (player in players) {
             val playerText = Text.literal("  • ${player.playerName}")
                 .formatted(Formatting.WHITE)
             drawContext.drawTextWithShadow(textRenderer, playerText, x, currentY, 0xFFFFFF)
-            
-            // Показываем сервер под именем (если есть место)
+
             if (player.serverAddress != "unknown" && player.serverAddress != "singleplayer") {
                 val serverText = Text.literal("    → ${player.serverAddress}")
                     .formatted(Formatting.GRAY)
                 currentY += textRenderer.fontHeight + 1
                 drawContext.drawTextWithShadow(textRenderer, serverText, x, currentY, 0xFFFFFF)
             }
-            
+
             currentY += textRenderer.fontHeight + 2
         }
-        
+
         return panelHeight + 4
     }
-    
-    /**
-     * Рендерит панель с количеством онлайн игроков на сервере
-     */
+
     private fun renderServerOnlinePanel(
         drawContext: DrawContext,
         textRenderer: TextRenderer,
@@ -316,43 +277,36 @@ object HudRenderer {
         y: Int
     ): Int {
         val count = OnlineStatusService.currentServerPlayerCount
-        
-        // Фоновая панель
+
         val panelWidth = 200
         val panelHeight = textRenderer.fontHeight + 4
-        
+
         val bgColor = if (ScsConfig.hudEditMode) {
-            0x9000FF00.toInt() // Зеленый с прозрачностью в режиме редактирования
+            0x9000FF00.toInt()
         } else {
-            0x80000000.toInt() // Черный с прозрачностью
+            0x80000000.toInt()
         }
         drawContext.fill(x - 2, y - 2, x + panelWidth, y + panelHeight, bgColor)
-        
-        // В режиме редактирования рисуем рамку для перетаскивания
+
         if (ScsConfig.hudEditMode) {
-            val frameColor = 0xFFFFFFFF.toInt() // Белая рамка
-            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor) // Верхняя
-            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor) // Нижняя
-            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor) // Левая
-            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor) // Правая
-            
-            // Подпись "Онлайн на сервере" в режиме редактирования
+            val frameColor = 0xFFFFFFFF.toInt()
+            drawContext.fill(x - 2, y - 2, x + panelWidth, y - 1, frameColor)
+            drawContext.fill(x - 2, y + panelHeight - 1, x + panelWidth, y + panelHeight, frameColor)
+            drawContext.fill(x - 2, y - 2, x - 1, y + panelHeight, frameColor)
+            drawContext.fill(x + panelWidth - 1, y - 2, x + panelWidth, y + panelHeight, frameColor)
+
             val labelText = Text.literal("Онлайн на сервере")
                 .formatted(Formatting.YELLOW, Formatting.BOLD)
             drawContext.drawTextWithShadow(textRenderer, labelText, x, y - 12, 0xFFFFFF)
         }
-        
-        // Показываем только количество
+
         val headerText = Text.literal("👥 Онлайн: $count")
             .formatted(Formatting.GREEN, Formatting.BOLD)
         drawContext.drawTextWithShadow(textRenderer, headerText, x, y, 0xFFFFFF)
-        
+
         return panelHeight + 4
     }
-    
-    /**
-     * Форматирует время онлайн в читаемый вид
-     */
+
     private fun formatOnlineTime(seconds: Long): String {
         return when {
             seconds < 60 -> "${seconds}с"

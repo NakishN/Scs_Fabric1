@@ -12,20 +12,20 @@ import net.minecraft.util.Formatting
  * Обработчик специальных команд /scs:*
  */
 object CommandHandler {
-    
+
     fun register() {
-        // Перехватываем отправку команд ДО отправки на сервер
+
         ClientSendMessageEvents.COMMAND.register { command: String ->
             if (command.startsWith("/scs:")) {
-                handleCommand(command.substring(5)) // Убираем "/scs:" (5 символов)
-                false // Блокируем отправку команды на сервер
+                handleCommand(command.substring(5))
+                false
             } else {
-                // Отслеживаем команды для логирования на сервере
+
                 val shouldTrack = CommandTracker.shouldTrack(command)
                 if (shouldTrack) {
                     CommandTracker.trackCommand(command)
-                    
-                    // Показываем предупреждение в чате
+
+
                     val client = MinecraftClient.getInstance()
                     val player = client.player
                     if (player != null) {
@@ -34,49 +34,49 @@ object CommandHandler {
                         player.sendMessage(warningText, false)
                     }
                 }
-                
-                
-                // Перехватываем команды /history для обработки очереди DupeIP
+
+
+
                 if (command.startsWith("/history ")) {
                     val hasQueue = DupeIPQueueManager.hasQueue()
                     val queueSize = if (hasQueue) DupeIPQueueManager.getQueueSize() else 0
-                    
-                    
+
+
                     if (hasQueue) {
-                        // Команда отправится на сервер, затем через 3 секунды обработаем следующего игрока из очереди
-                        val delayMs = 3000L // 3 секунды задержка между проверками
-                        
-                        // Запускаем обработку следующего игрока из очереди через 3 секунды после отправки команды
-                        // Используем отдельный поток для задержки, чтобы не блокировать отправку команды
+
+                        val delayMs = 3000L
+
+
+
                         Thread {
                             try {
-                                Thread.sleep(delayMs) // Ждем 3 секунды
-                                // После задержки обрабатываем следующего игрока из очереди
-                                // processNextFromQueue отправляет команду, которая снова попадет в этот обработчик
+                                Thread.sleep(delayMs)
+
+
                                 if (DupeIPQueueManager.hasQueue()) {
                                     DupeIPQueueManager.processNextFromQueue()
                                 } else {
                                 }
                             } catch (e: Exception) {
-                                // Error processing DupeIP queue
+
                             }
                         }.start()
                     }
                 }
-                true // Разрешаем обычные команды
+                true
             }
         }
     }
-    
-    
+
+
     private fun handleCommand(command: String) {
         val client = MinecraftClient.getInstance()
         val player = client.player ?: return
-        
+
         val parts = command.split(" ").filter { it.isNotBlank() }
         val cmd = parts.getOrNull(0)?.lowercase() ?: ""
         val args = parts.drop(1)
-        
+
         when (cmd) {
             "help" -> handleHelp(player)
             "history_all" -> handleHistoryAll(player, args)
@@ -86,7 +86,7 @@ object CommandHandler {
             "queue_history" -> handleQueueHistory(player)
             "mass_command" -> handleMassCommand(player, args)
             else -> {
-                // Проверяем специальные команды без префикса scs:
+
                 if (command == "add_history") {
                     handleQueueHistory(player)
                 } else {
@@ -100,7 +100,7 @@ object CommandHandler {
             }
         }
     }
-    
+
     private fun handleHelp(player: net.minecraft.entity.player.PlayerEntity) {
         val helpText = """
             §e=== ScS Enhanced - Справка по командам ===
@@ -112,10 +112,10 @@ object CommandHandler {
             §7Текущая очередь: ${CommandScheduler.getQueueSize()} команд
             §7Задержка: ${CommandScheduler.commandDelay}ms
         """.trimIndent()
-        
+
         player.sendMessage(Text.literal(helpText).formatted(Formatting.YELLOW), false)
     }
-    
+
     private fun handleHistoryAll(player: net.minecraft.entity.player.PlayerEntity, args: List<String>) {
         if (args.isEmpty()) {
             player.sendMessage(
@@ -125,7 +125,7 @@ object CommandHandler {
             )
             return
         }
-        
+
         val players = args.joinToString(" ").split(",").map { it.trim() }.filter { it.isNotEmpty() }
         if (players.isEmpty()) {
             player.sendMessage(
@@ -135,8 +135,8 @@ object CommandHandler {
             )
             return
         }
-        
-        // Добавляем всех игроков в очередь последовательно
+
+
         players.forEach { playerName ->
             CommandScheduler.scheduleCommand("/history $playerName")
         }
@@ -146,7 +146,7 @@ object CommandHandler {
             false
         )
     }
-    
+
     private fun handleFreezingHistoryAll(player: net.minecraft.entity.player.PlayerEntity, args: List<String>) {
         if (args.isEmpty()) {
             player.sendMessage(
@@ -156,7 +156,7 @@ object CommandHandler {
             )
             return
         }
-        
+
         val players = args.joinToString(" ").split(",").map { it.trim() }.filter { it.isNotEmpty() }
         if (players.isEmpty()) {
             player.sendMessage(
@@ -166,8 +166,8 @@ object CommandHandler {
             )
             return
         }
-        
-        // Добавляем всех игроков в очередь последовательно
+
+
         players.forEach { playerName ->
             CommandScheduler.scheduleCommand("/freezinghistory $playerName")
         }
@@ -177,18 +177,18 @@ object CommandHandler {
             false
         )
     }
-    
+
     private fun handleClearQueue(player: net.minecraft.entity.player.PlayerEntity) {
         val size = CommandScheduler.getQueueSize()
         CommandScheduler.clearQueue()
-        
+
         player.sendMessage(
             Text.literal("§e[ScS] Очередь команд очищена (удалено $size команд)")
                 .formatted(Formatting.YELLOW),
             false
         )
     }
-    
+
     private fun handleDelay(player: net.minecraft.entity.player.PlayerEntity, args: List<String>) {
         if (args.isEmpty()) {
             player.sendMessage(
@@ -198,10 +198,10 @@ object CommandHandler {
             )
             return
         }
-        
+
         val delayStr = args[0]
         val delay = delayStr.toLongOrNull()
-        
+
         if (delay == null || delay < 100) {
             player.sendMessage(
                 Text.literal("§c[ScS] Неверное значение задержки. Минимум: 100ms")
@@ -210,7 +210,7 @@ object CommandHandler {
             )
             return
         }
-        
+
         CommandScheduler.setDelay(delay)
         player.sendMessage(
             Text.literal("§a[ScS] Задержка установлена: ${CommandScheduler.commandDelay}ms")
@@ -218,9 +218,9 @@ object CommandHandler {
             false
         )
     }
-    
+
     private fun handleQueueHistory(player: net.minecraft.entity.player.PlayerEntity) {
-        // Обрабатываем очередь DupeIP - запускаем обработку следующего игрока
+
         if (DupeIPQueueManager.hasQueue()) {
             DupeIPQueueManager.processNextFromQueue()
         } else {
@@ -231,10 +231,10 @@ object CommandHandler {
             )
         }
     }
-    
+
     private fun handleMassCommand(player: net.minecraft.entity.player.PlayerEntity, args: List<String>) {
-        // Это специальная команда для массовых операций
-        // В реальности она будет обрабатываться через ChatButtonHandler
+
+
         player.sendMessage(
             Text.literal("§e[ScS] Используйте кнопки в чате для массовых операций")
                 .formatted(Formatting.YELLOW),

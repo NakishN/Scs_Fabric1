@@ -12,44 +12,44 @@ import java.util.concurrent.ConcurrentLinkedQueue
 object CommandScheduler {
     private val commandQueue = ConcurrentLinkedQueue<ScheduledCommand>()
     private var lastCommandTime = 0L
-    var commandDelay = 1200L // 1.2 секунды по умолчанию
+    var commandDelay = 1200L
         private set
-    
+
     private var isProcessing = false
-    
+
     data class ScheduledCommand(
         val command: String,
         val timestamp: Long = System.currentTimeMillis()
     )
-    
+
     /**
      * Добавляет команду в очередь
      */
     fun scheduleCommand(command: String) {
         if (command.isBlank()) return
-        
-        // Убираем слэш в начале если есть
+
+
         val cleanCommand = command.removePrefix("/")
-        
+
         commandQueue.offer(ScheduledCommand(cleanCommand))
     }
-    
+
     /**
      * Добавляет несколько команд в очередь
      */
     fun scheduleCommands(commands: List<String>) {
         commands.forEach { scheduleCommand(it) }
     }
-    
+
     /**
      * Обработка очереди команд (вызывается каждый тик)
      */
     fun processQueue(client: MinecraftClient) {
         if (commandQueue.isEmpty() || isProcessing) return
-        
+
         val currentTime = System.currentTimeMillis()
         val timeSinceLastCommand = currentTime - lastCommandTime
-        
+
         if (timeSinceLastCommand >= commandDelay) {
             val nextCommand = commandQueue.poll()
             if (nextCommand != null) {
@@ -60,7 +60,7 @@ object CommandScheduler {
             }
         }
     }
-    
+
     /**
      * Выполняет команду через сеть
      */
@@ -68,17 +68,17 @@ object CommandScheduler {
         try {
             val player = client.player
             val networkHandler = client.networkHandler
-            
+
             if (player == null || networkHandler == null) {
                 return
             }
-            
+
             val fullCommand = if (command.startsWith("/")) command else "/$command"
-            
-            // В Fabric используем sendChatCommand для отправки команды
+
+
             networkHandler.sendChatCommand(fullCommand)
-            
-            // Отправляем уведомление в чат
+
+
             if (ScsConfig.enableChatButtons) {
                 player.sendMessage(
                     net.minecraft.text.Text.literal("§7[ScS] §fКоманда: §e$fullCommand").apply {
@@ -88,10 +88,10 @@ object CommandScheduler {
                 )
             }
         } catch (e: Exception) {
-            // Failed to execute command
+
         }
     }
-    
+
     /**
      * Устанавливает задержку между командами (в миллисекундах)
      */
@@ -104,7 +104,7 @@ object CommandScheduler {
             commandDelay = delayMs
         }
     }
-    
+
     /**
      * Очищает очередь команд
      */
@@ -112,17 +112,17 @@ object CommandScheduler {
         commandQueue.clear()
         lastCommandTime = 0L
     }
-    
+
     /**
      * Получает текущий размер очереди
      */
     fun getQueueSize(): Int = commandQueue.size
-    
+
     /**
      * Проверяет, пуста ли очередь
      */
     fun isQueueEmpty(): Boolean = commandQueue.isEmpty()
-    
+
     /**
      * Получает все команды в очереди (для отображения)
      */

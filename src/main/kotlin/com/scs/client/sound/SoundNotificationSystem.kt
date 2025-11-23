@@ -10,20 +10,20 @@ import net.minecraft.util.Formatting
  * Система звуковых уведомлений для критичных событий
  */
 object SoundNotificationSystem {
-    
+
     /**
      * Проигрывает звук для серьезного нарушения
      */
     fun playSeriousViolationSound() {
         if (!ScsConfig.soundAlerts) return
-        
+
         try {
             val client = MinecraftClient.getInstance()
             val player = client.player ?: return
             val world = client.world ?: return
             val pos = player.blockPos
-            
-            // Используем метод с координатами и RegistryEntry
+
+
             world.playSound(
                 player,
                 pos.x.toDouble(),
@@ -36,23 +36,23 @@ object SoundNotificationSystem {
                 0L
             )
         } catch (e: Exception) {
-            // Игнорируем ошибки звука
+
         }
     }
-    
+
     /**
      * Проигрывает звук для DupeIP обнаружения
      */
     fun playDupeIPSound() {
         if (!ScsConfig.soundAlerts) return
-        
+
         try {
             val client = MinecraftClient.getInstance()
             val player = client.player ?: return
             val world = client.world ?: return
             val pos = player.blockPos
-            
-            // Используем метод с координатами и RegistryEntry
+
+
             world.playSound(
                 player,
                 pos.x.toDouble(),
@@ -65,26 +65,26 @@ object SoundNotificationSystem {
                 0L
             )
         } catch (e: Exception) {
-            // Игнорируем ошибки звука
+
         }
     }
-    
+
     /**
      * Проигрывает звук для обнаружения нарушений античита
      */
     fun playViolationSound(isSerious: Boolean) {
         if (!ScsConfig.soundAlerts) return
-        
+
         try {
             val client = MinecraftClient.getInstance()
             val player = client.player ?: return
             val world = client.world ?: return
-            
+
             if (isSerious) {
                 playSeriousViolationSound()
             } else {
                 val pos = player.blockPos
-                // Используем метод с координатами и RegistryEntry
+
                 world.playSound(
                     player,
                     pos.x.toDouble(),
@@ -98,7 +98,7 @@ object SoundNotificationSystem {
                 )
             }
         } catch (e: Exception) {
-            // Игнорируем ошибки звука
+
         }
     }
 }

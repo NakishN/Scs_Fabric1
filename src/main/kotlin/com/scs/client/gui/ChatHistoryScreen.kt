@@ -23,31 +23,31 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
     private var filterSerious = false
     private var filterPlayerChat = false
     private var selectedPlayer: String? = null
-    
+
     private lateinit var allCheckbox: CheckboxWidget
     private lateinit var violationsCheckbox: CheckboxWidget
     private lateinit var checksCheckbox: CheckboxWidget
     private lateinit var seriousCheckbox: CheckboxWidget
     private lateinit var playerChatCheckbox: CheckboxWidget
     private lateinit var closeButton: ButtonWidget
-    
+
     private val entries = mutableListOf<DisplayEntry>()
     private val playerChatEntries = mutableListOf<ChatMonitor.PlayerChatEntry>()
     private var scrollOffset = 0
     private val maxVisibleEntries = 15
-    
+
     init {
         updateEntries()
     }
-    
+
     override fun init() {
         super.init()
-        
+
         val checkboxY = 30
         val checkboxX = 10
         val checkboxSpacing = 20
-        
-        // Чекбоксы фильтров
+
+
         allCheckbox = CheckboxWidget.builder(
             Text.literal("Все"),
             textRenderer
@@ -65,7 +65,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             }
             .build()
         addDrawableChild(allCheckbox)
-        
+
         violationsCheckbox = CheckboxWidget.builder(
             Text.literal("Нарушения"),
             textRenderer
@@ -78,7 +78,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             }
             .build()
         addDrawableChild(violationsCheckbox)
-        
+
         checksCheckbox = CheckboxWidget.builder(
             Text.literal("Проверки"),
             textRenderer
@@ -91,7 +91,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             }
             .build()
         addDrawableChild(checksCheckbox)
-        
+
         seriousCheckbox = CheckboxWidget.builder(
             Text.literal("Серьезные"),
             textRenderer
@@ -104,8 +104,8 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             }
             .build()
         addDrawableChild(seriousCheckbox)
-        
-        // Чекбокс для чата игрока
+
+
         playerChatCheckbox = CheckboxWidget.builder(
             Text.literal("Чат игрока"),
             textRenderer
@@ -114,7 +114,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             .callback { _, checked ->
                 filterPlayerChat = checked
                 filterAll = false
-                // Если включен фильтр чата, используем текущего проверяемого игрока
+
                 if (checked && selectedPlayer == null) {
                     selectedPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
                 }
@@ -122,8 +122,8 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             }
             .build()
         addDrawableChild(playerChatCheckbox)
-        
-        // Кнопка закрытия
+
+
         closeButton = ButtonWidget.builder(
             Text.literal("Закрыть"),
             { close() }
@@ -131,37 +131,37 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             .build()
         addDrawableChild(closeButton)
     }
-    
+
     private fun updateCheckboxes() {
-        // CheckboxWidget обновляет состояние через callback, 
-        // поэтому просто синхронизируем состояние без прямого доступа к checked
-        // Это делается автоматически при создании через builder
+
+
+
     }
-    
+
     private fun updateEntries() {
         entries.clear()
         playerChatEntries.clear()
-        
-        // Если включен фильтр чата игрока, показываем чат вместо записей
+
+
         if (filterPlayerChat && selectedPlayer != null) {
             playerChatEntries.addAll(
-                ChatMonitor.playerChat.filter { 
-                    it.playerName.equals(selectedPlayer, ignoreCase = true) 
-                }.take(50) // Последние 50 сообщений
+                ChatMonitor.playerChat.filter {
+                    it.playerName.equals(selectedPlayer, ignoreCase = true)
+                }.take(50)
             )
             return
         }
-        
+
         if (filterAll || filterChecks) {
-            // Добавляем проверки
+
             ChatMonitor.entries.filter { it.kind == "CHECK" }
                 .forEach { entry ->
                     entries.add(DisplayEntry(entry.kind, entry.text, entry.timestamp, entry.playerName))
                 }
         }
-        
+
         if (filterAll || filterViolations) {
-            // Добавляем нарушения (если не фильтруем только серьезные)
+
             if (!filterSerious) {
                 ChatMonitor.violations.forEach { violation ->
                     entries.add(DisplayEntry(
@@ -173,9 +173,9 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
                 }
             }
         }
-        
+
         if (filterSerious) {
-            // Добавляем только серьезные нарушения
+
             ChatMonitor.violations.filter { it.isSerious }
                 .forEach { violation ->
                     entries.add(DisplayEntry(
@@ -186,20 +186,20 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
                     ))
                 }
         }
-        
-        // Сортируем по времени (новые сверху)
+
+
         entries.sortByDescending { it.timestamp.toEpochMilli() }
-        
-        // Ограничиваем количество
+
+
         while (entries.size > 100) {
             entries.removeAt(entries.size - 1)
         }
     }
-    
+
     override fun render(context: DrawContext, mouseX: Int, mouseY: Int, delta: Float) {
         renderBackground(context, mouseX, mouseY, delta)
-        
-        // Заголовок
+
+
         context.drawCenteredTextWithShadow(
             textRenderer,
             Text.literal("История нарушений ScS").formatted(Formatting.BOLD, Formatting.GOLD),
@@ -207,8 +207,8 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             10,
             0xFFFFFF
         )
-        
-        // Статистика
+
+
         val statsText = if (filterPlayerChat && selectedPlayer != null) {
             "Чат игрока: $selectedPlayer | Сообщений: ${playerChatEntries.size}"
         } else {
@@ -221,8 +221,8 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             height - 50,
             0xFFFFFF
         )
-        
-        // Информация о текущей проверке
+
+
         val currentCheckPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
         if (currentCheckPlayer != null && com.scs.client.monitor.CheckSession.isActive()) {
             val checkTime = com.scs.client.monitor.CheckSession.getStartTime()
@@ -242,60 +242,60 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
                 0xFFFFFF
             )
         }
-        
-        // Рисуем записи или чат игрока
+
+
         val startY = 140
         val entryHeight = textRenderer.fontHeight + 4
         val listX = 200
         val listWidth = width - listX - 20
-        
-        // Фон списка
+
+
         context.fill(listX - 5, startY - 5, listX + listWidth, height - 60, 0x80000000.toInt())
-        
-        // Если включен фильтр чата игрока, показываем чат
+
+
         if (filterPlayerChat && selectedPlayer != null && playerChatEntries.isNotEmpty()) {
             var currentY = startY
-            
-            // Заголовок с именем игрока
+
+
             val headerText = Text.literal("💬 Чат игрока: $selectedPlayer")
                 .formatted(Formatting.LIGHT_PURPLE, Formatting.BOLD)
             context.drawTextWithShadow(textRenderer, headerText, listX, currentY, 0xFFFFFF)
             currentY += entryHeight + 5
-            
-            // Сообщения чата
+
+
             val visibleChat = playerChatEntries.drop(scrollOffset).take(maxVisibleEntries)
             for (chatEntry in visibleChat) {
                 if (currentY + entryHeight > height - 60) break
-                
+
                 val chatText = Text.literal("${chatEntry.playerName}: ${chatEntry.message}")
                     .formatted(Formatting.GRAY)
                 context.drawTextWithShadow(textRenderer, chatText, listX, currentY, 0xFFFFFF)
-                
+
                 currentY += entryHeight
             }
         } else {
-            // Рисуем видимые записи
+
             val visibleEntries = entries.drop(scrollOffset).take(maxVisibleEntries)
             var currentY = startY
-            
+
             for (entry in visibleEntries) {
                 if (currentY + entryHeight > height - 60) break
-                
+
                 val prefix = getPrefix(entry.kind)
                 val color = getColor(entry.kind)
-                
+
                 val entryText = Text.literal("$prefix ${entry.text}")
                     .formatted(getFormatting(entry.kind))
-                
+
                 context.drawTextWithShadow(textRenderer, entryText, listX, currentY, color)
-                
+
                 currentY += entryHeight
             }
         }
-        
+
         super.render(context, mouseX, mouseY, delta)
     }
-    
+
     private fun getPrefix(kind: String): String {
         return when (kind) {
             "CHECK" -> "✓"
@@ -304,7 +304,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             else -> "•"
         }
     }
-    
+
     private fun getFormatting(kind: String): Formatting {
         return when (kind) {
             "CHECK" -> Formatting.GREEN
@@ -313,7 +313,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             else -> Formatting.WHITE
         }
     }
-    
+
     private fun getColor(kind: String): Int {
         return when (kind) {
             "CHECK" -> parseColor(ScsConfig.checkColor)
@@ -321,7 +321,7 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             else -> 0xFFFFFF
         }
     }
-    
+
     private fun parseColor(hex: String): Int {
         try {
             return Integer.parseInt(hex, 16)
@@ -329,13 +329,13 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
             return 0xFFFFFF
         }
     }
-    
+
     private fun formatTime(timestamp: Instant): String {
         val formatter = DateTimeFormatter.ofPattern("HH:mm:ss")
         val dateTime = java.time.LocalDateTime.ofInstant(timestamp, java.time.ZoneId.systemDefault())
         return dateTime.format(formatter)
     }
-    
+
     override fun mouseScrolled(mouseX: Double, mouseY: Double, horizontalAmount: Double, verticalAmount: Double): Boolean {
         if (verticalAmount > 0) {
             scrollOffset = (scrollOffset - 1).coerceAtLeast(0)
@@ -344,15 +344,15 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
         }
         return true
     }
-    
+
     override fun keyPressed(keyCode: Int, scanCode: Int, modifiers: Int): Boolean {
-        if (keyCode == 256) { // ESC
+        if (keyCode == 256) {
             close()
             return true
         }
         return super.keyPressed(keyCode, scanCode, modifiers)
     }
-    
+
     data class DisplayEntry(
         val kind: String,
         val text: String,

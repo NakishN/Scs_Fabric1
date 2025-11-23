@@ -15,11 +15,11 @@ object KeyInputHandler {
     private var prevHudConfig = false
 
     fun onEndTick(client: MinecraftClient) {
-        // Toggle HUD
+
         val currToggleHud = KeyBindings.toggleHudKey.isPressed
         if (currToggleHud && !prevToggleHud) {
             ScsConfig.enableHud = !ScsConfig.enableHud
-            ScsConfig.save() // Сохраняем изменение в конфиг
+            ScsConfig.save()
             client.player?.sendMessage(
                 net.minecraft.text.Text.literal(
                     if (ScsConfig.enableHud) "§a[HUD] Включен" else "§c[HUD] Выключен"
@@ -29,15 +29,15 @@ object KeyInputHandler {
         }
         prevToggleHud = currToggleHud
 
-        // Show History
+
         val currShowHistory = KeyBindings.showHistoryKey.isPressed
         if (currShowHistory && !prevShowHistory) {
-            // Открываем экран истории
+
             client.setScreen(com.scs.client.gui.ChatHistoryScreen(client.currentScreen))
         }
         prevShowHistory = currShowHistory
 
-        // Clear Entries
+
         val currClearEntries = KeyBindings.clearEntriesKey.isPressed
         if (currClearEntries && !prevClearEntries) {
             ChatMonitor.clearEntries()
@@ -48,14 +48,14 @@ object KeyInputHandler {
         }
         prevClearEntries = currClearEntries
 
-        // Shaurma Tap
+
         val currShaurmaTap = KeyBindings.shaurmaTapKey.isPressed
         if (currShaurmaTap && !prevShaurmaTap) {
             ShaurmaSystem.onShaurmaTap()
         }
         prevShaurmaTap = currShaurmaTap
 
-        // Shaurma Menu
+
         val currShaurmaMenu = KeyBindings.shaurmaMenuKey.isPressed
         if (currShaurmaMenu && !prevShaurmaMenu) {
             val stats = """
@@ -71,10 +71,10 @@ object KeyInputHandler {
         }
         prevShaurmaMenu = currShaurmaMenu
 
-        // HUD Config
+
         val currHudConfig = KeyBindings.hudConfigKey.isPressed
         if (currHudConfig && !prevHudConfig) {
-            // Открываем экран настроек HUD
+
             client.setScreen(com.scs.client.gui.HudConfigScreen(client.currentScreen))
         }
         prevHudConfig = currHudConfig

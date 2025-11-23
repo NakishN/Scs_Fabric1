@@ -25,11 +25,9 @@ open class Scs : ClientModInitializer {
 
     override fun onInitializeClient() {
         try {
-            // Инициализация защиты от деобфускации
             AntiDeobfuscator.checkIntegrity()
-            
-            // Основная инициализация происходит в ScsClient
-            // Здесь можно добавить общую логику если нужно
+
+
 
         } catch (e: Exception) {
             throw RuntimeException("ScS mod initialization failed", e)

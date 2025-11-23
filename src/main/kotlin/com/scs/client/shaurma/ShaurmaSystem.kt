@@ -52,7 +52,7 @@ object ShaurmaSystem {
         var message: String
 
         if (Random.nextInt(100) < ScsConfig.shaurmaBonusChance) {
-            // Бонусная шаурма!
+
             val bonusIndex = Random.nextInt(bonusMultipliers.size)
             reward = ScsConfig.shaurmaBaseReward * bonusMultipliers[bonusIndex]
             message = bonusMessages[bonusIndex]
@@ -62,7 +62,7 @@ object ShaurmaSystem {
             }
 
         } else {
-            // Обычная шаурма
+
             message = tapMessages[Random.nextInt(tapMessages.size)]
             if (ScsConfig.shaurmaSounds) {
                 playTapSound()
@@ -75,10 +75,10 @@ object ShaurmaSystem {
             sendShaurmaMessage(message, reward)
         }
 
-        // Проверяем достижения
+
         checkAchievements()
 
-        // Сохраняем каждые 10 тапов
+
         if (totalTaps % 10 == 0L) {
             save()
         }
@@ -88,7 +88,7 @@ object ShaurmaSystem {
         val client = MinecraftClient.getInstance()
         val player = client.player ?: return
 
-        // Основное сообщение
+
         val mainMessage = Text.literal("✨ $message ✨").apply {
             style = if (reward > ScsConfig.shaurmaBaseReward) {
                 style.withColor(Formatting.GOLD).withBold(true)
@@ -97,7 +97,7 @@ object ShaurmaSystem {
             }
         }
 
-        // Сообщение о награде
+
         val rewardMessage = Text.literal("▶ +$reward шаурмы! Всего: $shaurmaCount 🌯").apply {
             style = style.withColor(Formatting.GREEN).withItalic(true)
         }
@@ -105,7 +105,7 @@ object ShaurmaSystem {
         player.sendMessage(mainMessage, false)
         player.sendMessage(rewardMessage, false)
 
-        // Если большой бонус
+
         if (reward >= 10) {
             val epicMessage = Text.literal("🎉 ЭПИЧЕСКАЯ НАГРАДА! 🎉").apply {
                 style = style.withColor(Formatting.LIGHT_PURPLE).withBold(true)
@@ -129,7 +129,7 @@ object ShaurmaSystem {
                 1.2f + Random.nextFloat() * 0.3f
             )
         } catch (e: Exception) {
-            // Sound issues detected
+
         }
     }
 
@@ -148,7 +148,7 @@ object ShaurmaSystem {
                 1.5f
             )
 
-            // Дополнительный звук через задержку
+
             Thread {
                 Thread.sleep(200)
                 try {
@@ -161,11 +161,11 @@ object ShaurmaSystem {
                         2.0f
                     )
                 } catch (e: Exception) {
-                    // Игнорируем
+
                 }
             }.start()
         } catch (e: Exception) {
-            // Игнорируем
+
         }
     }
 
@@ -176,7 +176,7 @@ object ShaurmaSystem {
             savePath.writeText(data)
             lastSaveTime = System.currentTimeMillis()
         } catch (e: Exception) {
-            // Failed to save shaurma data
+
         }
     }
 
@@ -192,15 +192,15 @@ object ShaurmaSystem {
                     if (parts.size >= 3) {
                         lastSaveTime = parts[2].toLongOrNull() ?: 0
                     }
-                    
-                    // Загружаем достижения если есть (4-я часть)
+
+
                     if (parts.size >= 4 && parts[3].isNotEmpty()) {
                         unlockedAchievements.clear()
                         unlockedAchievements.addAll(parts[3].split(",").filter { it.isNotEmpty() })
                     }
 
-                    
-                    // Проверяем достижения после загрузки (без уведомлений)
+
+
                     checkAchievementsSilent()
                 }
             } else {
@@ -211,7 +211,7 @@ object ShaurmaSystem {
             unlockedAchievements.clear()
         }
     }
-    
+
     /**
      * Проверяет достижения без уведомлений (при загрузке)
      */
@@ -228,7 +228,7 @@ object ShaurmaSystem {
     }
 
     private val unlockedAchievements = mutableSetOf<String>()
-    
+
     data class Achievement(
         val id: String,
         val name: String,
@@ -236,7 +236,7 @@ object ShaurmaSystem {
         val icon: String,
         val requirement: () -> Boolean
     )
-    
+
     private val achievements = listOf(
         Achievement(
             "first_tap",
@@ -281,21 +281,21 @@ object ShaurmaSystem {
             { shaurmaCount >= 10000 }
         )
     )
-    
+
     fun hasAchievement(achievement: String): Boolean {
         return unlockedAchievements.contains(achievement)
     }
-    
+
     fun getAchievement(id: String): Achievement? {
         return achievements.find { it.id == id }
     }
-    
+
     fun getAllAchievements(): List<Achievement> = achievements
-    
+
     fun getUnlockedAchievements(): List<Achievement> {
         return achievements.filter { unlockedAchievements.contains(it.id) }
     }
-    
+
     fun getProgress(achievement: Achievement): Double {
         return when (achievement.id) {
             "first_tap" -> (totalTaps.coerceAtMost(1) / 1.0) * 100
@@ -307,7 +307,7 @@ object ShaurmaSystem {
             else -> 0.0
         }
     }
-    
+
     /**
      * Проверяет достижения и уведомляет о новых
      */
@@ -318,17 +318,17 @@ object ShaurmaSystem {
             }
         }
     }
-    
+
     /**
      * Разблокирует достижение и отправляет уведомление
      */
     private fun unlockAchievement(achievement: Achievement) {
         unlockedAchievements.add(achievement.id)
-        
+
         val client = MinecraftClient.getInstance()
         val player = client.player ?: return
-        
-        // Красивое уведомление о достижении
+
+
         val notification = Text.literal("")
             .append(Text.literal("${achievement.icon} ").formatted(Formatting.GOLD, Formatting.BOLD))
             .append(Text.literal("ДОСТИЖЕНИЕ РАЗБЛОКИРОВАНО!").formatted(Formatting.YELLOW, Formatting.BOLD))
@@ -336,10 +336,10 @@ object ShaurmaSystem {
             .append(Text.literal("${achievement.icon} ").formatted(Formatting.GOLD))
             .append(Text.literal(achievement.name).formatted(Formatting.WHITE, Formatting.BOLD))
             .append(Text.literal(" - ${achievement.description}").formatted(Formatting.GRAY))
-        
+
         player.sendMessage(notification, false)
-        
-        // Звук достижения
+
+
         if (ScsConfig.shaurmaSounds) {
             try {
                 val world = client.world ?: return
@@ -352,10 +352,10 @@ object ShaurmaSystem {
                     1.0f
                 )
             } catch (e: Exception) {
-                // Игнорируем ошибки звука
+
             }
         }
-        
+
     }
 
     fun resetData() {

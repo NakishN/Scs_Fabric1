@@ -9,14 +9,14 @@ import com.scs.Scs
 object DupeIPQueueManager {
     private var queuedPlayers: MutableList<String> = mutableListOf()
     private var queuedCommand: String = "/history"
-    
+
     fun setQueuePlayers(players: List<String>, command: String) {
         queuedPlayers.clear()
-        // Добавляем всех игроков кроме первого (первый будет выполнен при клике)
+
         queuedPlayers.addAll(players.drop(1))
         queuedCommand = command
     }
-    
+
     /**
      * Обрабатывает следующего игрока из очереди
      * Отправляет команду через MinecraftClient, чтобы она проходила через ClientSendMessageEvents.COMMAND
@@ -30,38 +30,38 @@ object DupeIPQueueManager {
             )
             return
         }
-        
+
         val nextPlayer = queuedPlayers.removeAt(0)
         val command = "$queuedCommand $nextPlayer"
-        
-        // Отправляем команду через MinecraftClient, чтобы она проходила через ClientSendMessageEvents.COMMAND
-        // и могла быть обработана CommandHandler
+
+
+
         val client = net.minecraft.client.MinecraftClient.getInstance()
         val player = client.player
-        
+
         if (player != null) {
             val fullCommand = if (command.startsWith("/")) command else "/$command"
-            // Используем sendChatCommand через networkHandler, который вызывает ClientSendMessageEvents.COMMAND
+
             client.networkHandler?.sendChatCommand(fullCommand)
         }
     }
-    
+
     /**
      * Просматривает следующего игрока без удаления из очереди
      */
     fun peekNextPlayer(): String? {
         return queuedPlayers.firstOrNull()
     }
-    
+
     /**
      * Удаляет следующего игрока из очереди
      */
     fun removeNextPlayer(): String? {
         return if (queuedPlayers.isNotEmpty()) queuedPlayers.removeAt(0) else null
     }
-    
+
     fun getQueueSize(): Int = queuedPlayers.size
-    
+
     fun hasQueue(): Boolean = queuedPlayers.isNotEmpty()
 }
 

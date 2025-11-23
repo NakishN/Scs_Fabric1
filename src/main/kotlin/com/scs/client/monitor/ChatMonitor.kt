@@ -27,7 +27,7 @@ object ChatMonitor {
     private var lastCheckedPlayer: String? = null
     private var lastCheckPlayerTime: Instant? = null
 
-    // Паттерны для поиска
+
     private val anticheatPatterns = listOf(
         Regex(""".*\[.*анти.*чит.*\]\s*(\w+)\s+(.+?)(?:\s*\((.+?)\))?(?:\s*#(\d+))?""", RegexOption.IGNORE_CASE),
         Regex(""".*(\w+)\s+(tried to .+?)(?:\s*\((.+?)\))?(?:\s*#(\d+))?""", RegexOption.IGNORE_CASE),
@@ -36,54 +36,54 @@ object ChatMonitor {
         Regex(""".*(\w+)\s+suspected using.*(?:\((.+?)\))?(?:\s*#(\d+))?""", RegexOption.IGNORE_CASE)
     )
 
-    // Паттерны для системных сообщений [System] [CHAT]
-    // Учитываем возможные временные метки в любом формате после [System] [CHAT]
+
+
     private val checkPatterns = listOf(
-        // Формат: [System] [CHAT] [15:38:11] ▶ Проверка успешно начата!
-        // Очень гибкий паттерн - ищем любые символы между [CHAT] и "Проверка"
+
+
         Regex("""\[System\].*?\[CHAT\].*?Проверка.*?успешно.*?начата""", RegexOption.IGNORE_CASE),
-        // Альтернативный - с символом стрелки
+
         Regex("""\[System\].*?\[CHAT\].*?[►▶].*?Проверка.*?успешно.*?начата""", RegexOption.IGNORE_CASE),
-        // Еще более простой - просто ищем ключевые слова
+
         Regex("""Проверка.*?успешно.*?начата""", RegexOption.IGNORE_CASE)
     )
 
     private val playerPatterns = listOf(
-        // Формат: [System] [CHAT] [15:38:11]    Проверяемый игрок: yaneloh2026
-        // Очень гибкий паттерн - ищем любые символы между [CHAT] и "Проверяемый"
+
+
         Regex("""\[System\].*?\[CHAT\].*?Проверяемый\s+игрок\s*[:：]\s*([a-zA-Z0-9_]+)""", RegexOption.IGNORE_CASE),
-        // Альтернативный формат без слова "Проверяемый"
+
         Regex("""\[System\].*?\[CHAT\].*?игрок\s*[:：]\s*([a-zA-Z0-9_]+)""", RegexOption.IGNORE_CASE),
-        // Еще более простой - просто ищем "игрок:" и имя после него
+
         Regex("""игрок\s*[:：]\s*([a-zA-Z0-9_]+)""", RegexOption.IGNORE_CASE)
     )
 
     private val modePatterns = listOf(
-        // Формат: [System] [CHAT] [15:38:11]    Вы находитесь на режиме: КланЛайт #1
-        // Очень гибкий паттерн - захватываем все после двоеточия до конца строки
+
+
         Regex("""\[System\].*?\[CHAT\].*?Вы\s+находитесь\s+на\s+режиме\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Альтернативный формат
+
         Regex("""\[System\].*?\[CHAT\].*?режим\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Еще более простой
+
         Regex("""на\s+режиме\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE)
     )
 
-    // Паттерны для системного чата [System] [CHAT]
-    // Учитываем возможные временные метки в любом формате после [System] [CHAT]
+
+
     private val systemChatPatterns = listOf(
-        // Формат: [System] [CHAT] [15:39:20] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» yaneloh2026 » 120732
-        // Очень гибкий паттерн - ищем любые символы между [CHAT] и именем игрока
-        // Используем .*? для нежадного поиска
+
+
+
         Regex("""\[System\].*?\[CHAT\].*?[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Формат: [System] [CHAT] [15:39:20] ᴄ | «ᴄʜᴇᴀᴛᴇʀ» yaneloh2026 » окей (без пробела перед »)
+
         Regex("""\[System\].*?\[CHAT\].*?[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"'](.+)""", RegexOption.IGNORE_CASE),
-        // Формат: [System] [CHAT] [ЧЧ:ММ:СС] ʟ | «sᴜᴘᴇʀᴠɪsᴏʀ» PlayerName » message
+
         Regex("""\[System\].*?\[CHAT\].*?[ʟl]\s*\|\s*.*?sᴜᴘᴇʀᴠɪsᴏʀ.*?\s*([a-zA-Z0-9_]+)\s+.*?[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Формат: [System] [CHAT] [ЧЧ:ММ:СС] PlayerName: message (обычный чат)
+
         Regex("""\[System\].*?\[CHAT\].*?([a-zA-Z0-9_]+)\s*[:：]\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Общий формат для чата игроков с кавычками
+
         Regex("""\[System\].*?\[CHAT\].*?[«"'"']\s*([a-zA-Z0-9_]+)\s*[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
-        // Упрощенный паттерн для чата с cheater - без требования [System] [CHAT]
+
         Regex("""[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"']\s*(.+)""", RegexOption.IGNORE_CASE),
         Regex("""[ᴄc]\s*\|\s*.*?ᴄʜᴇᴀᴛᴇʀ.*?\s*([a-zA-Z0-9_]+)\s*[»"'"'](.+)""", RegexOption.IGNORE_CASE)
     )
@@ -94,13 +94,13 @@ object ChatMonitor {
 
         val cleanText = stripFormatting(text)
 
-        // Логируем если включено
+
         if (ScsConfig.logAllChat) {
             logMessage(source, cleanText)
         }
 
 
-        // Проверяем сообщение
+
         checkMessage(text, source)
         if (text != cleanText) {
             checkMessage(cleanText, source)
@@ -110,34 +110,34 @@ object ChatMonitor {
     private fun checkMessage(text: String, source: String) {
         if (text.isBlank()) return
 
-        // Сначала проверяем на игрока (более специфичный паттерн)
-        // Это предотвратит дублирование, так как при нахождении игрока мы сразу начинаем проверку
+
+
         var playerFound = false
         for ((index, pattern) in playerPatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 2) {
                     val player = match.groupValues[1]
                     if (isValidPlayerName(player)) {
-                        // Проверяем, не дублируется ли запись о проверяемом игроке
+
                         val now = Instant.now()
                         val isDuplicate = lastCheckedPlayer?.equals(player, ignoreCase = true) == true &&
                                 lastCheckPlayerTime != null &&
                                 java.time.Duration.between(lastCheckPlayerTime, now).seconds < 2
-                        
+
                         if (!isDuplicate) {
-                            // Очищаем чат предыдущего игрока, если была активная проверка
+
                             val currentPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
                             if (currentPlayer != null && currentPlayer != player) {
-                                // Очищаем чат предыдущего игрока
+
                                 playerChat.removeAll { it.playerName.equals(currentPlayer, ignoreCase = true) }
                             }
-                            
+
                             addEntry(Entry("CHECK", "Проверяемый: $player", player))
                             lastCheckedPlayer = player
                             lastCheckPlayerTime = now
                         }
-                        
-                        // Начинаем сессию проверки для этого игрока (даже если запись не добавили из-за дублирования)
+
+
                         com.scs.client.monitor.CheckSession.startCheck(player)
                         playerFound = true
                         return
@@ -145,8 +145,8 @@ object ChatMonitor {
                 }
             }
         }
-        
-        // Если игрок не найден, проверяем на начало проверки
+
+
         if (!playerFound) {
             for ((index, pattern) in checkPatterns.withIndex()) {
                 val match = pattern.find(text)
@@ -157,7 +157,7 @@ object ChatMonitor {
             }
         }
 
-        // Проверка на режим (только для отображения в HUD, не сохраняем)
+
         for ((index, pattern) in modePatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 2) {
@@ -170,8 +170,8 @@ object ChatMonitor {
             }
         }
 
-        // Проверка на системный чат [System] [CHAT] - только чат игроков
-        // Сохраняем чат только для текущего проверяемого игрока
+
+
         for ((index, pattern) in systemChatPatterns.withIndex()) {
             pattern.find(text)?.let { match ->
                 if (match.groupValues.size >= 3) {
@@ -180,22 +180,22 @@ object ChatMonitor {
 
                     if (isValidPlayerName(player) && message.trim().isNotEmpty()) {
                         val currentCheckPlayer = com.scs.client.monitor.CheckSession.getCurrentPlayer()
-                        
-                        // Сохраняем чат только если:
-                        // 1. Есть активная проверка И это чат проверяемого игрока
-                        // 2. ИЛИ нет активной проверки (сохраняем все чаты до начала проверки)
+
+
+
+
                         if (currentCheckPlayer == null || player.equals(currentCheckPlayer, ignoreCase = true)) {
                             val chatEntry = PlayerChatEntry(player.trim(), message.trim())
                             playerChat.addFirst(chatEntry)
-                            
-                            // Ограничиваем размер списка чата
+
+
                             while (playerChat.size > 50) playerChat.removeLast()
-                            
-                            // Если есть активная проверка для этого игрока, добавляем чат в entries для отображения в HUD
+
+
                             if (currentCheckPlayer != null && player.equals(currentCheckPlayer, ignoreCase = true)) {
                                 addEntry(Entry("CHAT", chatEntry.text, player.trim()))
                             }
-                            
+
                             if (ScsConfig.logAllChat) {
                                 logMessage("CHAT", "$player: $message")
                             }
@@ -206,7 +206,7 @@ object ChatMonitor {
             }
         }
 
-        // Проверка на античит
+
         for (pattern in anticheatPatterns) {
             pattern.matchEntire(text)?.let { match ->
                 val player = match.groupValues.getOrNull(1)
@@ -230,11 +230,11 @@ object ChatMonitor {
         while (violations.size > 50) violations.removeLast()
 
         addEntry(Entry("VIOLATION", entry.text, entry.playerName))
-        
-        // Проигрываем звук уведомления
+
+
         SoundNotificationSystem.playViolationSound(entry.isSerious)
 
-        // Отправляем нарушение на сервер
+
         com.scs.client.online.OnlineStatusService.sendViolation(entry)
 
         if (entry.isSerious) {
@@ -263,7 +263,7 @@ object ChatMonitor {
 
             logPath.appendText(logEntry)
         } catch (e: Exception) {
-            // Игнорируем ошибки логирования
+
         }
     }
 
@@ -287,7 +287,7 @@ object ChatMonitor {
             .trim()
     }
 
-    // Классы данных
+
     data class Entry(
         val kind: String,
         val text: String,
