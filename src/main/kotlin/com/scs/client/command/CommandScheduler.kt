@@ -73,15 +73,16 @@ object CommandScheduler {
                 return
             }
 
-            val fullCommand = if (command.startsWith("/")) command else "/$command"
+            // sendChatCommand expects command WITHOUT leading slash
+            val cleanCommand = command.trimStart('/')
 
 
-            networkHandler.sendChatCommand(fullCommand)
+            networkHandler.sendChatCommand(cleanCommand)
 
 
             if (ScsConfig.enableChatButtons) {
                 player.sendMessage(
-                    net.minecraft.text.Text.literal("§7[ScS] §fКоманда: §e$fullCommand").apply {
+                    net.minecraft.text.Text.literal("§7[ScS] §fКоманда: §e/$cleanCommand").apply {
                         style = style.withItalic(true)
                     },
                     false

@@ -17,6 +17,10 @@ object HudRenderer {
     private var lastPlayersCacheUpdate: Long = 0
     private val PLAYERS_CACHE_UPDATE_INTERVAL_MS = 1000L
 
+    // Cache for panel width calculations
+    private var cachedMainPanelWidth: Int = 100
+    private var lastMainPanelEntriesHash: Int = 0
+
     fun render(drawContext: DrawContext, tickDelta: Float) {
         if (!ScsConfig.enableHud) return
 
@@ -94,8 +98,13 @@ object HudRenderer {
 
         if (entries.isEmpty()) return 0
 
-        val maxTextWidth = entries.maxOfOrNull { textRenderer.getWidth(getEntryText(it)) } ?: 100
-        val panelWidth = maxTextWidth + 8
+        // Cache panel width calculation to avoid expensive maxOfOrNull on every frame
+        val entriesHash = entries.hashCode()
+        if (entriesHash != lastMainPanelEntriesHash) {
+            cachedMainPanelWidth = (entries.maxOfOrNull { textRenderer.getWidth(getEntryText(it)) } ?: 100) + 8
+            lastMainPanelEntriesHash = entriesHash
+        }
+        val panelWidth = cachedMainPanelWidth
         val panelHeight = entries.size * (textRenderer.fontHeight + 2) + 4
 
         val bgColor = if (ScsConfig.hudEditMode) {

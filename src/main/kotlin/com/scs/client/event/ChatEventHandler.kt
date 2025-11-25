@@ -1,5 +1,6 @@
 package com.scs.client.event
 
+import com.scs.Scs
 import com.scs.client.command.ChatButtonHandler
 import com.scs.client.config.ScsConfig
 import com.scs.client.monitor.ChatMonitor
@@ -52,7 +53,6 @@ object ChatEventHandler {
                     }
                 }
             } catch (e: Exception) {
-
             }
             message
         }

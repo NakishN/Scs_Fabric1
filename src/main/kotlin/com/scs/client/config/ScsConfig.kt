@@ -106,15 +106,10 @@ object ScsConfig {
             config["showOnlinePanel"]?.let { showOnlinePanel = it.toBoolean() }
             config["showServerOnlinePanel"]?.let { showServerOnlinePanel = it.toBoolean() }
 
-            config["showViolationsPanel"]?.let { showServerOnlinePanel = it.toBoolean() }
-
             config["onlinePanelX"]?.let { onlinePanelX = it.toIntOrNull() ?: 320 }
             config["onlinePanelY"]?.let { onlinePanelY = it.toIntOrNull() ?: 6 }
             config["serverOnlinePanelX"]?.let { serverOnlinePanelX = it.toIntOrNull() ?: -320 }
             config["serverOnlinePanelY"]?.let { serverOnlinePanelY = it.toIntOrNull() ?: 6 }
-
-            config["violationsPanelX"]?.let { serverOnlinePanelX = it.toIntOrNull() ?: -320 }
-            config["violationsPanelY"]?.let { serverOnlinePanelY = it.toIntOrNull() ?: 6 }
 
             config["hudEditMode"]?.let { hudEditMode = it.toBoolean() }
 

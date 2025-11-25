@@ -142,17 +142,5 @@ object ChatButtonHandler {
                     .withBold(false)
             }
     }
-
-
-    /**
-     * Обрабатывает клик по кнопке команды
-     * Все команды отправляются на сервер напрямую, очередь обрабатывается автоматически
-     */
-    fun handleCommandButtonClick(command: String) {
-        if (!ScsConfig.enableChatButtons) return
-
-
-
-    }
 }
 

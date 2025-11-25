@@ -23,7 +23,6 @@ object ChatMonitor {
     val violations = ConcurrentLinkedDeque<ViolationEntry>()
     val playerChat = ConcurrentLinkedDeque<PlayerChatEntry>()
 
-    private val processedMessages = mutableSetOf<String>()
     private var lastCheckedPlayer: String? = null
     private var lastCheckPlayerTime: Instant? = null
 
@@ -263,7 +262,6 @@ object ChatMonitor {
 
             logPath.appendText(logEntry)
         } catch (e: Exception) {
-
         }
     }
 
@@ -271,7 +269,6 @@ object ChatMonitor {
         entries.clear()
         violations.clear()
         playerChat.clear()
-        processedMessages.clear()
         lastCheckedPlayer = null
         lastCheckPlayerTime = null
     }

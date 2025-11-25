@@ -1,5 +1,6 @@
 package com.scs.client.sound
 
+import com.scs.Scs
 import com.scs.client.config.ScsConfig
 import net.minecraft.client.MinecraftClient
 import net.minecraft.sound.SoundEvents
@@ -36,7 +37,6 @@ object SoundNotificationSystem {
                 0L
             )
         } catch (e: Exception) {
-
         }
     }
 
@@ -65,7 +65,6 @@ object SoundNotificationSystem {
                 0L
             )
         } catch (e: Exception) {
-
         }
     }
 
@@ -98,7 +97,6 @@ object SoundNotificationSystem {
                 )
             }
         } catch (e: Exception) {
-
         }
     }
 }

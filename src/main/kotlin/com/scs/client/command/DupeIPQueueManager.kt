@@ -40,9 +40,10 @@ object DupeIPQueueManager {
         val player = client.player
 
         if (player != null) {
-            val fullCommand = if (command.startsWith("/")) command else "/$command"
+            // sendChatCommand expects command WITHOUT leading slash
+            val cleanCommand = command.trimStart('/')
 
-            client.networkHandler?.sendChatCommand(fullCommand)
+            client.networkHandler?.sendChatCommand(cleanCommand)
         }
     }
 

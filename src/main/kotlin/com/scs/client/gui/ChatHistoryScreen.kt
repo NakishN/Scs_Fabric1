@@ -132,12 +132,6 @@ class ChatHistoryScreen(parent: Screen?) : Screen(Text.literal("ScS - Истор
         addDrawableChild(closeButton)
     }
 
-    private fun updateCheckboxes() {
-
-
-
-    }
-
     private fun updateEntries() {
         entries.clear()
         playerChatEntries.clear()

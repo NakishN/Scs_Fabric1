@@ -129,7 +129,6 @@ object ShaurmaSystem {
                 1.2f + Random.nextFloat() * 0.3f
             )
         } catch (e: Exception) {
-
         }
     }
 
@@ -139,6 +138,7 @@ object ShaurmaSystem {
             val player = client.player ?: return
             val world = client.world ?: return
 
+            // Играем первый звук
             world.playSound(
                 player,
                 player.blockPos,
@@ -148,24 +148,29 @@ object ShaurmaSystem {
                 1.5f
             )
 
-
-            Thread {
-                Thread.sleep(200)
+            // ИСПРАВЛЕНО: используем CompletableFuture вместо Thread для избежания утечки
+            java.util.concurrent.CompletableFuture.delayedExecutor(
+                200,
+                java.util.concurrent.TimeUnit.MILLISECONDS
+            ).execute {
                 try {
-                    world.playSound(
-                        player,
-                        player.blockPos,
-                        SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
-                        net.minecraft.sound.SoundCategory.MASTER,
-                        0.4f,
-                        2.0f
-                    )
+                    // Проверяем что игрок и мир все еще существуют
+                    val currentPlayer = client.player
+                    val currentWorld = client.world
+                    if (currentPlayer != null && currentWorld != null) {
+                        currentWorld.playSound(
+                            currentPlayer,
+                            currentPlayer.blockPos,
+                            SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
+                            net.minecraft.sound.SoundCategory.MASTER,
+                            0.4f,
+                            2.0f
+                        )
+                    }
                 } catch (e: Exception) {
-
                 }
-            }.start()
+            }
         } catch (e: Exception) {
-
         }
     }
 
@@ -176,7 +181,6 @@ object ShaurmaSystem {
             savePath.writeText(data)
             lastSaveTime = System.currentTimeMillis()
         } catch (e: Exception) {
-
         }
     }
 
